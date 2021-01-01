@@ -7,17 +7,19 @@ class AutomationSystem
 		
 	}
 
-	addInputStream(key)
+	setInputStream(stream, callback)
 	{
-		emitter.on(key, (values) => {
+		emitter.on(stream, (reciever, values) => {
 
 			console.log('Emitter Received', values);
+
+			callback(reciever, values);
 		});
 	}
 
-	addOutputStream(key, values)
+	setOutputStream(stream, reciever, values)
 	{
-		emitter.emit(key, values);
+		emitter.emit(stream, reciever, values);
 	}
 }
 
