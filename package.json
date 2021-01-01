@@ -1,0 +1,31 @@
+{
+	"name": "syntex-automation",
+	"version": "1.0.0",
+	"description": "An automation system for your smart home",
+	"main": "main.js",
+	"author": "SynTexDZN",
+	"engines": {
+		"homebridge": ">=0.3.0",
+		"node": ">=9.11.2"
+	},
+	"dependencies": {},
+	"keywords": [
+		"syntex",
+		"syntex-automation",
+		"plugin",
+		"http",
+		"automation"
+	],
+	"homepage": "https://github.com/SynTexDZN/syntex-automation#readme",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/SynTexDZN/syntex-automation.git"
+	},
+	"bugs": {
+		"url": "https://github.com/SynTexDZN/syntex-automation/issues"
+	},
+	"license": "ISC",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	}
+}

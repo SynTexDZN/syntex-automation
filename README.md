@@ -1,2 +1,2 @@
-# syntex-automation
- An automation system for your smart home
+# SynTex Automation System
+An automation system for your smart home
