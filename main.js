@@ -1,26 +1,25 @@
-const emitter = require('./emitter');
+const EventEmitter = require('events');
 
-class AutomationSystem
+class AutomationSystem extends EventEmitter
 {
 	constructor()
 	{
-		
+		super();
 	}
 
 	setInputStream(stream, callback)
 	{
-		emitter.on(stream, (reciever, values) => {
-
-			console.log('Emitter Received', values);
-
-			callback(reciever, values);
-		});
+		super.on(stream, (reciever, values) => callback(reciever, values));
 	}
 
 	setOutputStream(stream, reciever, values)
 	{
-		emitter.emit(stream, reciever, values);
+		super.emit(stream, reciever, values);
 	}
 }
 
-module.exports = new AutomationSystem();
+const automation = new AutomationSystem();
+
+automation.setMaxListeners(256);
+
+module.exports = automation;
