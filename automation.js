@@ -42,16 +42,22 @@ module.exports = class Automation
 
 				if(!obj || err)
 				{
-					this.automation = [];
-				}
+                    this.automation = [];
+                    
+                    logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
+                
+                    resolve(false);
+                }
 				else
 				{
-					this.automation = obj.automation;
+                    this.automation = obj.automation;
+                    
+                    logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
+                
+                    resolve(true);
                 }
                 
 				ready = true;
-
-                resolve();
 			});
 		});
     }
