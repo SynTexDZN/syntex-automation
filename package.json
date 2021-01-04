@@ -8,7 +8,9 @@
 		"homebridge": ">=0.3.0",
 		"node": ">=9.11.2"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"request": "^2.88.0"
+	},
 	"keywords": [
 		"syntex",
 		"syntex-automation",

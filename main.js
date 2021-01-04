@@ -1,4 +1,4 @@
-const EventEmitter = require('events');
+const EventEmitter = require('events'), request = require('request');
 
 class AutomationSystem extends EventEmitter
 {
@@ -14,7 +14,30 @@ class AutomationSystem extends EventEmitter
 
 	setOutputStream(stream, reciever, values)
 	{
-		super.emit(stream, reciever, values);
+		if(!super.emit(stream, reciever, values))
+		{
+			
+		}
+
+		sendToAutomationServer(values);
+	}
+
+	sendToAutomationServer(values)
+	{
+		var url = 'http://localhost:1777/update-automation', first = true;
+
+		for(const value in Object.keys(values))
+		{
+			url += (first ? '?' : '&') + value + '=' + values[value];
+		}
+
+		var theRequest = {
+			method : 'GET',
+			url : url,
+			timeout : 10000
+		};
+	
+		request(theRequest, () => {});
 	}
 }
 
