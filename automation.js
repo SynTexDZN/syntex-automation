@@ -38,8 +38,6 @@ module.exports = class Automation
     {
         return new Promise((resolve) => {
 
-            storage.list((err, obj) => console.log(obj));
-			
 			storage.load('automation', (err, obj) => {  
 
 				if(!obj || err)
@@ -51,8 +49,6 @@ module.exports = class Automation
 					this.automation = obj.automation;
                 }
                 
-                console.log(this.automation, obj);
-				
 				ready = true;
 
                 resolve();
@@ -62,10 +58,10 @@ module.exports = class Automation
 
 	runAutomation(id, letters, value)
 	{
+        AutomationSystem.sendToAutomationServer(id, letters, { value : value });
+
         value = value.toString();
         
-        console.log('RUN AUTOMATION', this.automation);
-		
 		for(var i = 0; i < this.automation.length; i++)
 		{
 			if(eventLock.includes(this.automation[i].id))
@@ -120,8 +116,6 @@ function checkTrigger(automation, id, letters, value)
 {
     var trigger = null;
     
-    console.log(value);
-
 	for(var i = 0; i < automation.trigger.length; i++)
 	{
 		if(automation.trigger[i].id == id && automation.trigger[i].letters == letters)
