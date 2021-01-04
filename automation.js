@@ -35,7 +35,7 @@ module.exports = class Automation
     {
         return new Promise((resolve) => {
 			
-			this.storage.load('automation', (err, obj) => {  
+			storage.load('automation', (err, obj) => {  
 
 				if(!obj || err)
 				{

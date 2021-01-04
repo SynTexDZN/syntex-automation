@@ -1,10 +1,16 @@
 const EventEmitter = require('events'), request = require('request');
 
-class AutomationSystem extends EventEmitter
+let LogikEngine = require('./automation');
+
+module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor()
+	constructor(logger, storagePath, dataManager)
 	{
 		super();
+
+		super.setMaxListeners(256);
+
+		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager);
 	}
 
 	setInputStream(stream, callback)
@@ -40,9 +46,3 @@ class AutomationSystem extends EventEmitter
 		request(theRequest, () => {});
 	}
 }
-
-const automation = new AutomationSystem();
-
-automation.setMaxListeners(256);
-
-module.exports = automation;
