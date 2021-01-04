@@ -1,16 +1,19 @@
 //let TypeManager = require('./type-manager'), AutomationSystem = require('syntex-automation');
 const request = require('request'), store = require('json-fs-store');
-var logger, storage;
+var logger, storage, eventManager;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(log, storagePath, dataManager)
+	constructor(log, storagePath, dataManager, EventManager)
 	{
 		logger = log;
-		storage = store(storagePath);
+        storage = store(storagePath);
+        
+        console.log('STORAGE PATH', storagePath);
 
-		this.dataManager = dataManager;
+        this.dataManager = dataManager;
+        eventManager = EventManager;
 
 		//TypeManager = new TypeManager(logger);
 
@@ -34,6 +37,8 @@ module.exports = class Automation
 	loadAutomation()
     {
         return new Promise((resolve) => {
+
+            storage.list((err, obj) => console.log(obj));
 			
 			storage.load('automation', (err, obj) => {  
 
@@ -44,7 +49,9 @@ module.exports = class Automation
 				else
 				{
 					this.automation = obj.automation;
-				}
+                }
+                
+                console.log(this.automation, obj);
 				
 				ready = true;
 
@@ -55,7 +62,9 @@ module.exports = class Automation
 
 	runAutomation(id, letters, value)
 	{
-		value = value.value.toString();
+        value = value.toString();
+        
+        console.log('RUN AUTOMATION', this.automation);
 		
 		for(var i = 0; i < this.automation.length; i++)
 		{
@@ -109,7 +118,9 @@ module.exports = class Automation
 
 function checkTrigger(automation, id, letters, value)
 {
-	var trigger = null;
+    var trigger = null;
+    
+    console.log(value);
 
 	for(var i = 0; i < automation.trigger.length; i++)
 	{
@@ -216,7 +227,8 @@ function executeResult(automation, trigger)
 			{
 				logger.log('error', automation.result[i].id, automation.result[i].letters, '[' + automation.result[i].value + '] %invalid-value%! ( ' + automation.result[i].id + ' )');
 			}
-			*/
+            */
+           eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
 		}
 
 		if(!eventLock.includes(automation.id))

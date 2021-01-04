@@ -10,22 +10,26 @@ module.exports = class AutomationSystem extends EventEmitter
 
 		super.setMaxListeners(256);
 
-		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager);
+		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, this);
 	}
 
 	setInputStream(stream, callback)
 	{
-		super.on(stream, (reciever, values) => callback(reciever, values));
+		super.on(stream, (reciever, values) => {
+
+			console.log('<<<', stream, reciever, values);
+			
+			callback(reciever, values)
+		});
 	}
 
 	setOutputStream(stream, reciever, values)
 	{
-		if(!super.emit(stream, reciever, values))
-		{
-			
-		}
+		super.emit(stream, reciever, values);
 
-		sendToAutomationServer(reciever.id, reciever.letters, values);
+		console.log('>>>', stream, reciever, values);
+
+		this.sendToAutomationServer(reciever.id, reciever.letters, values);
 	}
 
 	sendToAutomationServer(id, letters, values)
