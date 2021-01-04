@@ -19,16 +19,16 @@ class AutomationSystem extends EventEmitter
 			
 		}
 
-		sendToAutomationServer(values);
+		sendToAutomationServer(reciever.id, reciever.letters, values);
 	}
 
-	sendToAutomationServer(values)
+	sendToAutomationServer(id, letters, values)
 	{
-		var url = 'http://localhost:1777/update-automation', first = true;
+		var url = 'http://localhost:1777/update-automation?id=' + id + '&letters=' + letters;
 
-		for(const value in Object.keys(values))
+		for(const value of Object.keys(values))
 		{
-			url += (first ? '?' : '&') + value + '=' + values[value];
+			url += '&' + value + '=' + values[value];
 		}
 
 		var theRequest = {
@@ -36,7 +36,7 @@ class AutomationSystem extends EventEmitter
 			url : url,
 			timeout : 10000
 		};
-	
+
 		request(theRequest, () => {});
 	}
 }
