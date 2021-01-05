@@ -1,5 +1,7 @@
-//let TypeManager = require('./type-manager'), AutomationSystem = require('syntex-automation');
+let TypeManager = require('./type-manager');
+
 const request = require('request'), store = require('json-fs-store');
+
 var logger, storage, eventManager;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
@@ -15,7 +17,7 @@ module.exports = class Automation
         this.dataManager = dataManager;
         eventManager = EventManager;
 
-		//TypeManager = new TypeManager(logger);
+		TypeManager = new TypeManager(logger);
 
 		storage.load('automation-lock', (err, obj) => {
 
@@ -64,7 +66,7 @@ module.exports = class Automation
 
 	runAutomation(id, letters, value)
 	{
-        AutomationSystem.sendToAutomationServer(id, letters, { value : value });
+        eventManager.sendToAutomationServer(id, letters, { value : value });
 
         value = value.toString();
         
@@ -210,7 +212,6 @@ function executeResult(automation, trigger)
 
 		if(automation.result[i].id && automation.result[i].letters && automation.result[i].value && automation.result[i].name)
 		{
-			/*
 			var state = null;
 
 			if((state = TypeManager.validateUpdate(automation.result[i].id, automation.result[i].letters, { value : automation.result[i].value })) != null)
@@ -221,14 +222,12 @@ function executeResult(automation, trigger)
 					state.value = 0;
 				}
 
-				//AutomationSystem.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, state);
+				eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
 			}
 			else
 			{
 				logger.log('error', automation.result[i].id, automation.result[i].letters, '[' + automation.result[i].value + '] %invalid-value%! ( ' + automation.result[i].id + ' )');
 			}
-            */
-           eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
 		}
 
 		if(!eventLock.includes(automation.id))
