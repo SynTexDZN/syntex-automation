@@ -2,19 +2,19 @@ let TypeManager = require('./type-manager');
 
 const request = require('request'), store = require('json-fs-store');
 
-var logger, storage, eventManager, serverMode = false;
+var logger, storage, dataManager, eventManager, serverMode = false;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(log, storagePath, dataManager, isServer, EventManager)
+	constructor(log, storagePath, DataManager, isServer, EventManager)
 	{
 		logger = log;
         storage = store(storagePath);
         
-        console.log('STORAGE PATH', storagePath);
-
-        this.dataManager = dataManager;
+		console.log('STORAGE PATH', storagePath);
+		
+        dataManager = DataManager;
         eventManager = EventManager;
         serverMode = isServer;
 
@@ -172,7 +172,7 @@ async function checkCondition(automation, trigger)
 	{
 		//var value = platform.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);
 
-		var value = this.dataManager.readValues(automation.condition[i].id, automation.condition[i].letters).value;
+		var value = dataManager.readAccessoryService(automation.condition[i].id, automation.condition[i].letters);
 
 		if(value != null)
 		{
