@@ -4,7 +4,7 @@ const EventEmitter = require('events'), request = require('request');
 
 module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor(logger, storagePath, dataManager)
+	constructor(logger, storagePath, dataManager, isServer)
 	{
 		super();
 
@@ -12,14 +12,14 @@ module.exports = class AutomationSystem extends EventEmitter
 
 		this.logger = logger;
 
-		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, this);
+		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, isServer, this);
 	}
 
 	setInputStream(stream, callback)
 	{
 		super.on(stream, (reciever, values) => {
 
-			this.logger.debug('<<<', stream, reciever, values);
+			this.logger.debug('<<< ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
 			
 			callback(reciever, values)
 		});
@@ -29,7 +29,7 @@ module.exports = class AutomationSystem extends EventEmitter
 	{
 		super.emit(stream, reciever, values);
 
-		this.logger.debug('>>>', stream, reciever, values);
+		this.logger.debug('>>> ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
 	}
 
 	sendToAutomationServer(id, letters, values)

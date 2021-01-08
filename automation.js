@@ -2,12 +2,12 @@ let TypeManager = require('./type-manager');
 
 const request = require('request'), store = require('json-fs-store');
 
-var logger, storage, eventManager;
+var logger, storage, eventManager, serverMode = false;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(log, storagePath, dataManager, EventManager)
+	constructor(log, storagePath, dataManager, isServer, EventManager)
 	{
 		logger = log;
         storage = store(storagePath);
@@ -16,6 +16,7 @@ module.exports = class Automation
 
         this.dataManager = dataManager;
         eventManager = EventManager;
+        serverMode = isServer;
 
 		TypeManager = new TypeManager(logger);
 
@@ -66,7 +67,10 @@ module.exports = class Automation
 
 	runAutomation(id, letters, value)
 	{
-        eventManager.sendToAutomationServer(id, letters, { value : value });
+        if(!serverMode)
+        {
+            eventManager.sendToAutomationServer(id, letters, { value : value });
+        }
 
         value = value.toString();
         
