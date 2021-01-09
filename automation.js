@@ -7,34 +7,37 @@ var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(log, storagePath, DataManager, isServer, EventManager)
+	constructor(Logger, storagePath, DataManager, isServer, EventManager)
 	{
-		logger = log;
-        storage = store(storagePath);
-        
-		console.log('STORAGE PATH', storagePath);
-		
-        dataManager = DataManager;
+		logger = Logger;
+		dataManager = DataManager;
         eventManager = EventManager;
-        serverMode = isServer;
-
+		serverMode = isServer;
+		
 		TypeManager = new TypeManager(logger);
 
-		storage.load('automation-lock', (err, obj) => {
+		if(storagePath != null)
+		{
+			storage = store(storagePath);
 
-			if(!obj || err)
-			{
-				logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %read_error%! ' + err);
-			}
-			else
-			{
-				eventLock = obj.eventLock || [];
-				positiveFired = obj.positiveFired || [];
-				negativeFired = obj.negativeFired || [];
-			}
+			storage.load('automation-lock', (err, obj) => {
 
-			this.loadAutomation();
-		});
+				if(!obj || err)
+				{
+					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %read_error%! ' + err);
+				}
+				else
+				{
+					eventLock = obj.eventLock || [];
+					positiveFired = obj.positiveFired || [];
+					negativeFired = obj.negativeFired || [];
+				}
+	
+				this.loadAutomation();
+			});
+		}
+        
+		console.log('STORAGE PATH', storagePath);
 	}
 
 	loadAutomation()
@@ -67,60 +70,58 @@ module.exports = class Automation
 
 	runAutomation(id, letters, value)
 	{
-        if(!serverMode)
-        {
-            eventManager.sendToAutomationServer(id, letters, { value : value });
-        }
-
-        value = value.toString();
-        
-		for(var i = 0; i < this.automation.length; i++)
+		if(ready)
 		{
-			if(eventLock.includes(this.automation[i].id))
+			if(!serverMode)
 			{
-				for(var j = 0; j < this.automation[i].trigger.length; j++)
+				eventManager.sendToAutomationServer(id, letters, { value : value });
+			}
+
+			value = value.toString();
+			
+			for(var i = 0; i < this.automation.length; i++)
+			{
+				if(eventLock.includes(this.automation[i].id))
 				{
-					if(this.automation[i].trigger[j].id == id && this.automation[i].trigger[j].letters == letters)
+					for(var j = 0; j < this.automation[i].trigger.length; j++)
 					{
-						var index = eventLock.indexOf(this.automation[i].id);
-
-						if(this.automation[i].trigger[j].operation == '>' && parseFloat(value) < parseFloat(this.automation[i].trigger[j].value) && negativeFired.includes(this.automation[i].trigger[j].id))
+						if(this.automation[i].trigger[j].id == id && this.automation[i].trigger[j].letters == letters)
 						{
-							eventLock.splice(index, 1);
+							var index = eventLock.indexOf(this.automation[i].id);
 
-							logger.debug('Automation [' + this.automation[i].name + '] Unterschritten ' + this.automation[i].id);
-						}
+							if(this.automation[i].trigger[j].operation == '>' && parseFloat(value) < parseFloat(this.automation[i].trigger[j].value) && negativeFired.includes(this.automation[i].trigger[j].id))
+							{
+								eventLock.splice(index, 1);
 
-						if(this.automation[i].trigger[j].operation == '<' && parseFloat(value) > parseFloat(this.automation[i].trigger[j].value) && positiveFired.includes(this.automation[i].trigger[j].id))
-						{
-							eventLock.splice(index, 1);
+								logger.debug('Automation [' + this.automation[i].name + '] Unterschritten ' + this.automation[i].id);
+							}
 
-							logger.debug('Automation [' + this.automation[i].name + '] Überschritten ' + this.automation[i].id);
-						}
+							if(this.automation[i].trigger[j].operation == '<' && parseFloat(value) > parseFloat(this.automation[i].trigger[j].value) && positiveFired.includes(this.automation[i].trigger[j].id))
+							{
+								eventLock.splice(index, 1);
 
-						if(this.automation[i].trigger[j].operation == '=' && value != this.automation[i].trigger[j].value)
-						{
-							eventLock.splice(index, 1);
+								logger.debug('Automation [' + this.automation[i].name + '] Überschritten ' + this.automation[i].id);
+							}
 
-							logger.debug('Automation [' + this.automation[i].name + '] Ungleich ' + this.automation[i].id);
+							if(this.automation[i].trigger[j].operation == '=' && value != this.automation[i].trigger[j].value)
+							{
+								eventLock.splice(index, 1);
+
+								logger.debug('Automation [' + this.automation[i].name + '] Ungleich ' + this.automation[i].id);
+							}
 						}
 					}
 				}
 			}
-		}
 
-		for(var i = 0; i < this.automation.length; i++)
-		{
-			if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
+			for(var i = 0; i < this.automation.length; i++)
 			{
-				checkTrigger(this.automation[i], id, letters, value.toString());
+				if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
+				{
+					checkTrigger(this.automation[i], id, letters, value.toString());
+				}
 			}
 		}
-	}
-
-	isReady()
-	{
-		return ready;
 	}
 };
 
