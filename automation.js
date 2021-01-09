@@ -114,6 +114,14 @@ module.exports = class Automation
 				}
 			}
 
+			storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
+
+				if(err)
+				{
+					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
+				}
+			});
+
 			for(var i = 0; i < this.automation.length; i++)
 			{
 				if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
@@ -125,7 +133,7 @@ module.exports = class Automation
 	}
 };
 
-function checkTrigger(automation, id, letters, value)
+async function checkTrigger(automation, id, letters, value)
 {
     var trigger = null;
     
@@ -204,7 +212,7 @@ async function checkCondition(automation, trigger)
 	}
 }
 
-function executeResult(automation, trigger)
+async function executeResult(automation, trigger)
 {
 	for(var i = 0; i < automation.result.length; i++)
 	{
@@ -235,17 +243,29 @@ function executeResult(automation, trigger)
 			}
 		}
 
+		if(url != '')
+		{
+			var theRequest = {
+				method : 'GET',
+				url : url,
+				timeout : 10000
+			};
+
+			request(theRequest, function(err, response, body)
+			{
+				var statusCode = response && response.statusCode ? response.statusCode : -1;
+
+				if(err || statusCode != 200)
+				{
+					logger.log('error', 'bridge', 'Bridge', '[' + this.name + '] %request_result[0]% [' + this.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
+				}
+				
+			}.bind({ url : theRequest.url, name : automation.name }));
+		}
+
 		if(!eventLock.includes(automation.id))
 		{
 			eventLock.push(automation.id);
-
-			storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
-
-				if(err)
-				{
-					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-				}
-			});
 		}
 
 		if(trigger.operation == '<')
@@ -276,35 +296,15 @@ function executeResult(automation, trigger)
 				}
 			}
 		}
-
-		storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
-			
-			if(err)
-			{
-				logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-			}
-		});
-
-		if(url != '')
-		{
-			var theRequest = {
-				method : 'GET',
-				url : url,
-				timeout : 10000
-			};
-
-			request(theRequest, function(err, response, body)
-			{
-				var statusCode = response && response.statusCode ? response.statusCode : -1;
-
-				if(err || statusCode != 200)
-				{
-					logger.log('error', 'bridge', 'Bridge', '[' + this.name + '] %request_result[0]% [' + this.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
-				}
-				
-			}.bind({ url : theRequest.url, name : automation.name }));
-		}
 	}
+
+	storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
+			
+		if(err)
+		{
+			logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
+		}
+	});
 
 	logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 }
