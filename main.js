@@ -4,13 +4,14 @@ const EventEmitter = require('events'), request = require('request');
 
 module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor(logger, storagePath, dataManager, isServer)
+	constructor(logger, storagePath, dataManager, pluginName, isServer)
 	{
 		super();
 
 		super.setMaxListeners(256);
 
 		this.logger = logger;
+		this.pluginName = pluginName;
 
 		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, isServer, this);
 	}
@@ -34,7 +35,7 @@ module.exports = class AutomationSystem extends EventEmitter
 
 	sendToAutomationServer(id, letters, values)
 	{
-		var url = 'http://localhost:1777/update-automation?id=' + id + '&letters=' + letters;
+		var url = 'http://localhost:1777/update-automation?id=' + id + '&letters=' + letters + '&plugin=' + this.pluginName;
 
 		for(const value of Object.keys(values))
 		{
