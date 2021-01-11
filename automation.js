@@ -236,6 +236,17 @@ async function executeResult(automation, trigger)
 				}
 
 				eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
+			
+				if(eventManager.pluginName != automation.result[i].plugin)
+				{
+					var theRequest = {
+						method : 'GET',
+						url : 'http://127.0.0.1:' + (eventManager.RouteManager.getPort(automation.result[i].plugin) || 1710) + '/devices?id=' + automation.result[i].id + '&type=' + TypeManager.letterToType(automation.result[i].letters[0]) + '&counter=' + automation.result[i].letters[1] + '&value=' + automation.result[i].value,
+						timeout : 10000
+					};
+
+					fetchRequest(theRequest, automation[i].name);
+				}
 			}
 			else
 			{
@@ -251,16 +262,7 @@ async function executeResult(automation, trigger)
 				timeout : 10000
 			};
 
-			request(theRequest, function(err, response, body)
-			{
-				var statusCode = response && response.statusCode ? response.statusCode : -1;
-
-				if(err || statusCode != 200)
-				{
-					logger.log('error', 'bridge', 'Bridge', '[' + this.name + '] %request_result[0]% [' + this.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
-				}
-				
-			}.bind({ url : theRequest.url, name : automation.name }));
+			fetchRequest(theRequest, automation[i].name);
 		}
 
 		if(!eventLock.includes(automation.id))
@@ -307,4 +309,18 @@ async function executeResult(automation, trigger)
 	});
 
 	logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+}
+
+function fetchRequest(theRequest, name)
+{
+	request(theRequest, (err, response, body) => {
+
+		var statusCode = response && response.statusCode ? response.statusCode : -1;
+
+		if(err || statusCode != 200)
+		{
+			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
+		}
+		
+	});
 }
