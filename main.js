@@ -1,4 +1,4 @@
-let LogikEngine = require('./automation');
+let LogikEngine = require('./automation'), RouteManager = require('./route-manager');
 
 const EventEmitter = require('events'), request = require('request');
 
@@ -13,6 +13,7 @@ module.exports = class AutomationSystem extends EventEmitter
 		this.logger = logger;
 		this.pluginName = pluginName;
 
+		this.RouteManager = new RouteManager(api.user.storagePath());
 		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, isServer, this);
 	}
 
