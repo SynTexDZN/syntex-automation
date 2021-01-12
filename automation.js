@@ -2,17 +2,16 @@ let TypeManager = require('./type-manager');
 
 const request = require('request'), store = require('json-fs-store');
 
-var logger, storage, dataManager, eventManager, serverMode = false;
+var logger, storage, dataManager, eventManager;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(Logger, storagePath, DataManager, isServer, EventManager)
+	constructor(Logger, storagePath, DataManager, EventManager)
 	{
 		logger = Logger;
 		dataManager = DataManager;
         eventManager = EventManager;
-		serverMode = isServer;
 		
 		TypeManager = new TypeManager(logger);
 
@@ -36,8 +35,6 @@ module.exports = class Automation
 				this.loadAutomation();
 			});
 		}
-        
-		console.log('STORAGE PATH', storagePath);
 	}
 
 	loadAutomation()
@@ -72,11 +69,6 @@ module.exports = class Automation
 	{
 		if(ready)
 		{
-			if(!serverMode)
-			{
-				eventManager.sendToAutomationServer(id, letters, { value : value });
-			}
-
 			value = value.toString();
 			
 			for(var i = 0; i < this.automation.length; i++)
@@ -235,17 +227,19 @@ async function executeResult(automation, trigger)
 					state.value = 0;
 				}
 
-				eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
-			
-				if(eventManager.pluginName != automation.result[i].plugin)
+				if(eventManager.pluginName != automation.result[i].plugin && automation.result[i].plugin != null && eventManager.RouteManager.getPort(automation.result[i].plugin) != null)
 				{
 					var theRequest = {
 						method : 'GET',
-						url : 'http://127.0.0.1:' + (eventManager.RouteManager.getPort(automation.result[i].plugin) || 1710) + '/devices?id=' + automation.result[i].id + '&type=' + TypeManager.letterToType(automation.result[i].letters[0]) + '&counter=' + automation.result[i].letters[1] + '&value=' + automation.result[i].value,
+						url : 'http://' + (automation.result[i].bridge || '127.0.0.1') + ':' + eventManager.RouteManager.getPort(automation.result[i].plugin) + '/devices?id=' + automation.result[i].id + '&type=' + TypeManager.letterToType(automation.result[i].letters[0]) + '&counter=' + automation.result[i].letters[1] + '&value=' + automation.result[i].value,
 						timeout : 10000
 					};
 
-					fetchRequest(theRequest, automation[i].name);
+					fetchRequest(theRequest, automation.name);
+				}
+				else
+				{
+					eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
 				}
 			}
 			else
