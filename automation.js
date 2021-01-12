@@ -11,7 +11,7 @@ module.exports = class Automation
 	{
 		logger = Logger;
 		dataManager = DataManager;
-        eventManager = EventManager;
+		eventManager = EventManager;
 		
 		TypeManager = new TypeManager(logger);
 
@@ -38,32 +38,32 @@ module.exports = class Automation
 	}
 
 	loadAutomation()
-    {
-        return new Promise((resolve) => {
+	{
+		return new Promise((resolve) => {
 
 			storage.load('automation', (err, obj) => {  
 
 				if(!obj || err)
 				{
-                    this.automation = [];
-                    
-                    logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
-                
-                    resolve(false);
-                }
+					this.automation = [];
+
+					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
+
+					resolve(false);
+				}
 				else
 				{
-                    this.automation = obj.automation;
-                    
-                    logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
-                
-                    resolve(true);
-                }
-                
+					this.automation = obj.automation;
+
+					logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
+
+					resolve(true);
+				}
+
 				ready = true;
 			});
 		});
-    }
+	}
 
 	runAutomation(id, letters, value)
 	{
@@ -127,8 +127,8 @@ module.exports = class Automation
 
 async function checkTrigger(automation, id, letters, value)
 {
-    var trigger = null;
-    
+	var trigger = null;
+
 	for(var i = 0; i < automation.trigger.length; i++)
 	{
 		if(automation.trigger[i].id == id && automation.trigger[i].letters == letters)
