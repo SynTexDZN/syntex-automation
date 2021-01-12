@@ -239,7 +239,18 @@ async function executeResult(automation, trigger)
 				}
 				else
 				{
-					eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : JSON.parse(automation.result[i].value) });
+					var value = automation.result[i].value;
+
+					try
+					{
+						value = JSON.parse(automation.result[i].value)
+					}
+					catch(error)
+					{
+						this.logger.log('error', 'bridge', 'Bridge', '%json_parse_error%! ( ' + automation.result[i].value + ') ' + error);
+					}
+					
+					eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : value });
 				}
 			}
 			else
