@@ -256,7 +256,7 @@ async function executeResult(automation, trigger)
 				timeout : 10000
 			};
 
-			fetchRequest(theRequest, automation[i].name);
+			fetchRequest(theRequest, automation.name);
 		}
 
 		if(!eventLock.includes(automation.id))
