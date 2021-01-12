@@ -247,7 +247,7 @@ async function executeResult(automation, trigger)
 					}
 					catch(error)
 					{
-						this.logger.log('error', 'bridge', 'Bridge', '%json_parse_error%! ( ' + automation.result[i].value + ') ' + error);
+						logger.log('error', 'bridge', 'Bridge', '%json_parse_error%! ( ' + automation.result[i].value + ') ' + error);
 					}
 					
 					eventManager.setOutputStream('SynTexAutomation', { id : automation.result[i].id, letters : automation.result[i].letters }, { value : value });
