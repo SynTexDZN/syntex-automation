@@ -1,10 +1,10 @@
 let LogikEngine = require('./automation'), RouteManager = require('./route-manager');
 
-const EventEmitter = require('events'), request = require('request');
+const EventEmitter = require('events');
 
 module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor(logger, storagePath, dataManager, pluginName, isServer)
+	constructor(logger, storagePath, dataManager, pluginName, configPath)
 	{
 		super();
 
@@ -13,8 +13,8 @@ module.exports = class AutomationSystem extends EventEmitter
 		this.logger = logger;
 		this.pluginName = pluginName;
 
-		this.RouteManager = new RouteManager(api.user.storagePath());
-		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, isServer, this);
+		this.RouteManager = new RouteManager(logger, configPath);
+		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, this);
 	}
 
 	setInputStream(stream, callback)
@@ -29,26 +29,8 @@ module.exports = class AutomationSystem extends EventEmitter
 
 	setOutputStream(stream, reciever, values)
 	{
-		super.emit(stream, reciever, values);
-
 		this.logger.debug('>>> ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
-	}
 
-	sendToAutomationServer(id, letters, values)
-	{
-		var url = 'http://localhost:1777/update-automation?id=' + id + '&letters=' + letters + '&plugin=' + this.pluginName;
-
-		for(const value of Object.keys(values))
-		{
-			url += '&' + value + '=' + values[value];
-		}
-
-		var theRequest = {
-			method : 'GET',
-			url : url,
-			timeout : 10000
-		};
-
-		request(theRequest, () => {});
+		super.emit(stream, reciever, values);
 	}
 }
