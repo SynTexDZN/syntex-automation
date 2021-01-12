@@ -2,22 +2,31 @@ const store = require('json-fs-store');
 
 module.exports = class RouteManager
 {
-    constructor(configPath)
+    constructor(logger, configPath)
     {
         this.plugins = [];
+        this.logger = logger;
 
-        store(configPath).load('config', (obj, err) => {
+        if(configPath != null)
+        {
+            store(configPath).load('config', (err, obj) => {
 
-            for(const i in obj.platforms)
-            {
-                if(obj.platforms[i].automationDirectory != null && obj.platforms[i].port != null)
+                if(!obj || err)
                 {
-                    this.plugins.push({ ip : 'localhost', name : obj.platforms[i].name, port : obj.platforms[i].port });
+                    this.logger.log('error', 'bridge', 'Bridge', 'Config.json %read_error%!');
                 }
-            }
-
-            console.log(this.plugins);
-        });
+                else
+                {
+                    for(const i in obj.platforms)
+                    {
+                        if(obj.platforms[i].automationDirectory != null && obj.platforms[i].port != null)
+                        {
+                            this.plugins.push({ ip : 'localhost', name : obj.platforms[i].platform, port : obj.platforms[i].port });
+                        }
+                    }
+                }
+            });
+        }
     }
 
     getPort(pluginName)
@@ -26,7 +35,7 @@ module.exports = class RouteManager
         {
             if(this.plugins[i].name == pluginName)
             {
-                return this.plugins[i];
+                return this.plugins[i].port;
             }
         }
 
