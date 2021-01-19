@@ -48,29 +48,32 @@ module.exports = class TypeManager
 
 		for(const i in state)
 		{
-			try
+			if(state[i] != null)
 			{
-				state[i] = JSON.parse(state[i]);
-			}
-			catch(e)
-			{
-				this.logger.log('warn', id, letters, '%conversion_error_parse[0]%: [' + state[i] + '] %conversion_error_parse[1]%! ( ' + id + ' )');
+				try
+				{
+					state[i] = JSON.parse(state[i]);
+				}
+				catch(e)
+				{
+					this.logger.log('warn', id, letters, '%conversion_error_parse[0]%: [' + state[i] + '] %conversion_error_parse[1]%! ( ' + id + ' )');
 
-				return null;
-			}
-			
-			var format = data[letters[0].toUpperCase()].format;
+					return null;
+				}
 
-			if(format instanceof Object)
-			{
-				format = format[i];
-			}
+				var format = data[letters[0].toUpperCase()].format;
 
-			if(typeof state[i] != format)
-			{
-				this.logger.log('warn', id, letters, '%conversion_error_format[0]%: [' + state[i] + '] %conversion_error_format[1]% ' + (format == 'boolean' ? '%conversion_error_format[2]%' : format == 'number' ? '%conversion_error_format[3]%' : '%conversion_error_format[4]%') + ' %conversion_error_format[5]%! ( ' + id + ' )');
+				if(format instanceof Object)
+				{
+					format = format[i];
+				}
 
-				return null;
+				if(typeof state[i] != format)
+				{
+					this.logger.log('warn', id, letters, '%conversion_error_format[0]%: [' + state[i] + '] %conversion_error_format[1]% ' + (format == 'boolean' ? '%conversion_error_format[2]%' : format == 'number' ? '%conversion_error_format[3]%' : '%conversion_error_format[4]%') + ' %conversion_error_format[5]%! ( ' + id + ' )');
+
+					return null;
+				}
 			}
 		}
 
