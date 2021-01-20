@@ -24,8 +24,8 @@ module.exports = class AutomationSystem extends EventEmitter
 
 	setOutputStream(stream, reciever, values)
 	{
-		this.logger.debug('>>> ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
-
 		super.emit(stream, reciever, values);
+
+		this.logger.debug('>>> ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
 	}
 }
