@@ -31,7 +31,7 @@ module.exports = class Automation
 					positiveFired = obj.positiveFired || [];
 					negativeFired = obj.negativeFired || [];
 				}
-	
+
 				this.loadAutomation();
 			});
 		}
@@ -47,17 +47,17 @@ module.exports = class Automation
 				{
 					this.automation = [];
 
-					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
-
 					resolve(false);
+
+					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
 				}
 				else
 				{
 					this.automation = obj.automation;
 
-					logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
-
 					resolve(true);
+
+					logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
 				}
 
 				ready = true;
@@ -326,6 +326,5 @@ function fetchRequest(theRequest, name)
 		{
 			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
 		}
-		
 	});
 }
