@@ -215,14 +215,6 @@ module.exports = class Automation
 				}
 			}
 
-			storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
-
-				if(err)
-				{
-					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-				}
-			});
-
 			for(var i = 0; i < this.automation.length; i++)
 			{
 				if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
@@ -230,6 +222,14 @@ module.exports = class Automation
 					checkTrigger(this.automation[i], id, letters, values);
 				}
 			}
+
+			storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
+
+				if(err)
+				{
+					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
+				}
+			});
 		}
 	}
 };
