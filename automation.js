@@ -328,10 +328,10 @@ async function checkCondition(automation, trigger)
 
 			if(automation.condition[i].operation == '=')
 			{
-				if(values.value == null || automation.trigger[i].value == null || values.value == automation.trigger[i].value
-				&& (values.hue == null || automation.trigger[i].hue == null || values.hue == automation.trigger[i].hue)
-				&& (values.saturation == null || automation.trigger[i].saturation == null || values.saturation == automation.trigger[i].saturation)
-				&& (values.brightness == null || automation.trigger[i].brightness == null || values.brightness == automation.trigger[i].brightness))
+				if(values.state == null || automation.condition[i].value == null || values.state == automation.condition[i].value
+				&& (values.hue == null || automation.condition[i].hue == null || values.hue == automation.condition[i].hue)
+				&& (values.saturation == null || automation.condition[i].saturation == null || values.saturation == automation.condition[i].saturation)
+				&& (values.brightness == null || automation.condition[i].brightness == null || values.brightness == automation.condition[i].brightness))
 				{
 					condition++;
 				}
