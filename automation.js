@@ -160,81 +160,90 @@ module.exports = class Automation
 
 	runAutomation(id, letters, values)
 	{
-		if(ready)
-		{
-			for(var i = 0; i < this.automation.length; i++)
+		return new Promise((resolve) => {
+		
+			if(ready)
 			{
-				if(eventLock.includes(this.automation[i].id))
+				for(var i = 0; i < this.automation.length; i++)
 				{
-					for(var j = 0; j < this.automation[i].trigger.length; j++)
+					if(eventLock.includes(this.automation[i].id))
 					{
-						if(this.automation[i].trigger[j].id == id && this.automation[i].trigger[j].letters == letters)
+						for(var j = 0; j < this.automation[i].trigger.length; j++)
 						{
-							var index = eventLock.indexOf(this.automation[i].id);
-
-							if(this.automation[i].trigger[j].operation == '>' && negativeFired.includes(this.automation[i].trigger[j].id))
+							if(this.automation[i].trigger[j].id == id && this.automation[i].trigger[j].letters == letters)
 							{
-								if(values.value != null && this.automation[i].trigger[j].value != null && values.value < this.automation[i].trigger[j].value
-								|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue < this.automation[i].trigger[j].hue
-								|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation < this.automation[i].trigger[j].saturation
-								|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness < this.automation[i].trigger[j].brightness)
-								{
-									eventLock.splice(index, 1);
+								var index = eventLock.indexOf(this.automation[i].id);
 
-									logger.debug('Automation [' + this.automation[i].name + '] Unterschritten ' + this.automation[i].id);
+								if(this.automation[i].trigger[j].operation == '>' && negativeFired.includes(this.automation[i].trigger[j].id))
+								{
+									if(values.value != null && this.automation[i].trigger[j].value != null && values.value < this.automation[i].trigger[j].value
+									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue < this.automation[i].trigger[j].hue
+									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation < this.automation[i].trigger[j].saturation
+									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness < this.automation[i].trigger[j].brightness)
+									{
+										eventLock.splice(index, 1);
+
+										logger.debug('Automation [' + this.automation[i].name + '] Unterschritten ' + this.automation[i].id);
+									}
 								}
-							}
 
-							if(this.automation[i].trigger[j].operation == '<' && positiveFired.includes(this.automation[i].trigger[j].id))
-							{
-								if(values.value != null && this.automation[i].trigger[j].value != null && values.value > this.automation[i].trigger[j].value
-								|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue > this.automation[i].trigger[j].hue
-								|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation > this.automation[i].trigger[j].saturation
-								|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness > this.automation[i].trigger[j].brightness)
+								if(this.automation[i].trigger[j].operation == '<' && positiveFired.includes(this.automation[i].trigger[j].id))
 								{
-									eventLock.splice(index, 1);
+									if(values.value != null && this.automation[i].trigger[j].value != null && values.value > this.automation[i].trigger[j].value
+									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue > this.automation[i].trigger[j].hue
+									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation > this.automation[i].trigger[j].saturation
+									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness > this.automation[i].trigger[j].brightness)
+									{
+										eventLock.splice(index, 1);
 
-									logger.debug('Automation [' + this.automation[i].name + '] Überschritten ' + this.automation[i].id);
+										logger.debug('Automation [' + this.automation[i].name + '] Überschritten ' + this.automation[i].id);
+									}
 								}
-							}
 
-							if(this.automation[i].trigger[j].operation == '=')
-							{
-								if(values.value != null && this.automation[i].trigger[j].value != null && values.value != this.automation[i].trigger[j].value
-								|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue != this.automation[i].trigger[j].hue
-								|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation != this.automation[i].trigger[j].saturation
-								|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness != this.automation[i].trigger[j].brightness)
+								if(this.automation[i].trigger[j].operation == '=')
 								{
-									eventLock.splice(index, 1);
+									if(values.value != null && this.automation[i].trigger[j].value != null && values.value != this.automation[i].trigger[j].value
+									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue != this.automation[i].trigger[j].hue
+									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation != this.automation[i].trigger[j].saturation
+									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness != this.automation[i].trigger[j].brightness)
+									{
+										eventLock.splice(index, 1);
 
-									logger.debug('Automation [' + this.automation[i].name + '] Ungleich ' + this.automation[i].id);
+										logger.debug('Automation [' + this.automation[i].name + '] Ungleich ' + this.automation[i].id);
+									}
 								}
 							}
 						}
 					}
 				}
-			}
 
-			for(var i = 0; i < this.automation.length; i++)
+				for(var i = 0; i < this.automation.length; i++)
+				{
+					if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
+					{
+						checkTrigger(this.automation[i], id, letters, values);
+					}
+				}
+
+				resolve();
+
+				storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
+
+					if(err)
+					{
+						logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
+					}
+				});
+			}
+			else
 			{
-				if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
-				{
-					checkTrigger(this.automation[i], id, letters, values);
-				}
+				resolve();
 			}
-
-			storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
-
-				if(err)
-				{
-					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-				}
-			});
-		}
+		});
 	}
 };
 
-async function checkTrigger(automation, id, letters, values)
+function checkTrigger(automation, id, letters, values)
 {
 	var trigger = null;
 
@@ -292,7 +301,7 @@ async function checkTrigger(automation, id, letters, values)
 	}
 }
 
-async function checkCondition(automation, trigger)
+function checkCondition(automation, trigger)
 {
 	var condition = 0;
 
@@ -347,7 +356,7 @@ async function checkCondition(automation, trigger)
 	}
 }
 
-async function executeResult(automation, trigger)
+function executeResult(automation, trigger)
 {
 	for(var i = 0; i < automation.result.length; i++)
 	{
@@ -470,15 +479,20 @@ async function executeResult(automation, trigger)
 	});
 }
 
-async function fetchRequest(theRequest, name)
+function fetchRequest(theRequest, name)
 {
-	request(theRequest, (err, response, body) => {
+	return new Promise((resolve) => {
 
-		var statusCode = response && response.statusCode ? response.statusCode : -1;
+		request(theRequest, (err, response, body) => {
 
-		if(err || statusCode != 200)
-		{
-			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
-		}
+			var statusCode = response && response.statusCode ? response.statusCode : -1;
+
+			resolve();
+
+			if(err || statusCode != 200)
+			{
+				logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
+			}
+		});
 	});
 }
