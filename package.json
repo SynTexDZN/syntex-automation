@@ -1,6 +1,6 @@
 {
 	"name": "syntex-automation",
-	"version": "1.0.2-b21",
+	"version": "1.0.2-b22",
 	"description": "An automation system for your smart home",
 	"main": "main.js",
 	"author": "SynTexDZN",
