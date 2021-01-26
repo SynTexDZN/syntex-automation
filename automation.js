@@ -301,15 +301,35 @@ function checkTrigger(automation, id, letters, values)
 	}
 }
 
-function checkCondition(automation, trigger)
+async function checkCondition(automation, trigger)
 {
 	var condition = 0;
 
 	for(var i = 0; i < automation.condition.length; i++)
 	{
-		//var value = platform.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);
+		var values = null;
 
-		var values = dataManager.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);
+		if(eventManager.pluginName != automation.condition[i].plugin && automation.condition[i].plugin != null && eventManager.RouteManager.getPort(automation.condition[i].plugin) != null)
+		{
+			var theRequest = {
+				method : 'GET',
+				url : 'http://' + (automation.condition[i].bridge || '127.0.0.1') + ':' + eventManager.RouteManager.getPort(automation.condition[i].plugin) + '/devices?id=' + automation.condition[i].id + '&type=' + TypeManager.letterToType(automation.condition[i].letters[0]) + '&counter=' + automation.condition[i].letters[1],
+				timeout : 10000
+			};
+
+			try
+			{
+				values = JSON.parse(await fetchRequest(theRequest, automation.name));
+			}
+			catch(error)
+			{
+				this.logger.log('error', 'bridge', 'Bridge', 'Condition Request %json_parse_error%! ' + error);
+			}
+		}
+		else
+		{
+			values = dataManager.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);	
+		}
 
 		if(values != null)
 		{
@@ -487,11 +507,15 @@ function fetchRequest(theRequest, name)
 
 			var statusCode = response && response.statusCode ? response.statusCode : -1;
 
-			resolve();
-
 			if(err || statusCode != 200)
 			{
+				resolve(null);
+
 				logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
+			}
+			else
+			{
+				resolve(body);
 			}
 		});
 	});
