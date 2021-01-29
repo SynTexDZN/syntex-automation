@@ -21,7 +21,7 @@ module.exports = class RouteManager
 					{
 						if(obj.platforms[i].automationDirectory != null && obj.platforms[i].port != null)
 						{
-							this.plugins.push({ ip : 'localhost', name : obj.platforms[i].platform, port : obj.platforms[i].port });
+							this.plugins.push({ name : obj.platforms[i].platform, port : obj.platforms[i].port });
 						}
 					}
 				}
