@@ -9,7 +9,7 @@
 		"node": ">=9.11.2"
 	},
 	"dependencies": {
-		"request": "^2.88.0"
+		"axios": "^0.21.1"
 	},
 	"keywords": [
 		"syntex",

@@ -1,6 +1,6 @@
 let TypeManager = require('./type-manager');
 
-const request = require('request'), store = require('json-fs-store');
+const axios = require('axios'), store = require('json-fs-store');
 
 var logger, storage, dataManager, eventManager;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
@@ -312,7 +312,6 @@ async function checkCondition(automation, trigger)
 		if(eventManager.pluginName != automation.condition[i].plugin && automation.condition[i].plugin != null && eventManager.RouteManager.getPort(automation.condition[i].plugin) != null)
 		{
 			var theRequest = {
-				method : 'GET',
 				url : 'http://' + (automation.condition[i].bridge || '127.0.0.1') + ':' + eventManager.RouteManager.getPort(automation.condition[i].plugin) + '/devices?id=' + automation.condition[i].id + '&type=' + TypeManager.letterToType(automation.condition[i].letters[0]) + '&counter=' + automation.condition[i].letters[1],
 				timeout : 10000
 			};
@@ -409,7 +408,6 @@ function executeResult(automation, trigger)
 				if(eventManager.pluginName != automation.result[i].plugin && automation.result[i].plugin != null && eventManager.RouteManager.getPort(automation.result[i].plugin) != null)
 				{
 					var theRequest = {
-						method : 'GET',
 						url : 'http://' + (automation.result[i].bridge || '127.0.0.1') + ':' + eventManager.RouteManager.getPort(automation.result[i].plugin) + '/devices?id=' + automation.result[i].id + '&type=' + TypeManager.letterToType(automation.result[i].letters[0]) + '&counter=' + automation.result[i].letters[1] + '&value=' + state.value,
 						timeout : 10000
 					};
@@ -445,7 +443,6 @@ function executeResult(automation, trigger)
 		if(url != '')
 		{
 			var theRequest = {
-				method : 'GET',
 				url : url,
 				timeout : 10000
 			};
@@ -503,20 +500,11 @@ function fetchRequest(theRequest, name)
 {
 	return new Promise((resolve) => {
 
-		request(theRequest, (err, response, body) => {
+		axios.get(theRequest.url, theRequest).then((response) => resolve(response.data)).catch((err) => {
 
-			var statusCode = response && response.statusCode ? response.statusCode : -1;
+			resolve(null);
 
-			if(err || statusCode != 200)
-			{
-				resolve(null);
-
-				logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + statusCode + '] %request_result[2]%: [' + (body || '') + '] ' + (err ? err : ''));
-			}
-			else
-			{
-				resolve(body);
-			}
+			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + err.response.status + '] %request_result[2]%: [' + (err.response.data || '') + '] ' + (err || ''));
 		});
 	});
 }
