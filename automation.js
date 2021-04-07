@@ -318,7 +318,7 @@ async function checkCondition(automation, trigger)
 
 			try
 			{
-				values = JSON.parse(await fetchRequest(theRequest, automation.name));
+				values = await fetchRequest(theRequest, automation.name);
 			}
 			catch(error)
 			{
