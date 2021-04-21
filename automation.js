@@ -504,7 +504,7 @@ function fetchRequest(theRequest, name)
 
 			resolve(null);
 
-			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + err.response.status + '] %request_result[2]%: [' + (err.response.data || '') + '] ' + (err || ''));
+			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ' + (err || ''));
 		});
 	});
 }
