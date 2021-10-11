@@ -4,7 +4,7 @@ const EventEmitter = require('events');
 
 module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor(logger, storagePath, dataManager, pluginName, configPath)
+	constructor(logger, files, dataManager, pluginName, configPath)
 	{
 		super();
 
@@ -14,7 +14,7 @@ module.exports = class AutomationSystem extends EventEmitter
 		this.pluginName = pluginName;
 
 		this.RouteManager = new RouteManager(logger, configPath);
-		this.LogikEngine = new LogikEngine(logger, storagePath, dataManager, this);
+		this.LogikEngine = new LogikEngine(logger, files, dataManager, this);
 	}
 
 	setInputStream(stream, callback)

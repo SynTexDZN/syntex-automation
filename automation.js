@@ -1,65 +1,61 @@
 let TypeManager = require('./type-manager');
 
-const axios = require('axios'), store = require('json-fs-store');
+const axios = require('axios');
 
-var logger, storage, dataManager, eventManager;
+var logger, files, dataManager, eventManager;
 var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
 
 module.exports = class Automation
 {
-	constructor(Logger, storagePath, DataManager, EventManager)
+	constructor(Logger, Files, DataManager, EventManager)
 	{
 		logger = Logger;
+		files = Files;
 		dataManager = DataManager;
 		eventManager = EventManager;
 		
 		TypeManager = new TypeManager(logger);
 
-		if(storagePath != null)
-		{
-			storage = store(storagePath);
+		files.readFile('/automation/automation-lock.json').then((data) => {
 
-			storage.load('automation-lock', (err, obj) => {
+			if(data != null)
+			{
+				eventLock = obj.eventLock || [];
+				positiveFired = obj.positiveFired || [];
+				negativeFired = obj.negativeFired || [];
+			}
+			else
+			{
+				logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %read_error%! ' + err);
+			}
 
-				if(!obj || err)
-				{
-					logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %read_error%! ' + err);
-				}
-				else
-				{
-					eventLock = obj.eventLock || [];
-					positiveFired = obj.positiveFired || [];
-					negativeFired = obj.negativeFired || [];
-				}
-
-				this.loadAutomation();
-			});
-		}
+			this.loadAutomation();
+		});
 	}
 
 	loadAutomation()
 	{
 		return new Promise((resolve) => {
 
-			storage.load('automation', (err, obj) => {  
+			files.readFile('/automation/automation.json').then((data) => {
 
-				if(!obj || err)
+				if(data != null)
 				{
-					this.automation = [];
-
-					resolve(false);
-
-					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
-				}
-				else
-				{
-					this.automation = obj.automation;
+					this.automation = data;
 
 					resolve(true);
 
 					this.parseAutomation();
 
 					logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
+				}
+				else
+				{
+					this.automation = [];
+
+					resolve(false);
+
+					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
 				}
 
 				ready = true;
@@ -227,9 +223,9 @@ module.exports = class Automation
 
 				resolve();
 
-				storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
+				files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
 
-					if(err)
+					if(!success)
 					{
 						logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
 					}
@@ -485,9 +481,9 @@ function executeResult(automation, trigger)
 		}
 	}
 
-	storage.add({ id : 'automation-lock', eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }, (err) => {
-			
-		if(err)
+	files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
+
+		if(!success)
 		{
 			logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
 		}
