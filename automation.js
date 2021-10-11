@@ -154,7 +154,7 @@ module.exports = class Automation
 		}
 	}
 
-	runAutomation(id, letters, values)
+	runAutomation(id, letters, state)
 	{
 		return new Promise((resolve) => {
 		
@@ -172,10 +172,10 @@ module.exports = class Automation
 
 								if(this.automation[i].trigger[j].operation == '>' && negativeFired.includes(this.automation[i].trigger[j].id))
 								{
-									if(values.value != null && this.automation[i].trigger[j].value != null && values.value < this.automation[i].trigger[j].value
-									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue < this.automation[i].trigger[j].hue
-									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation < this.automation[i].trigger[j].saturation
-									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness < this.automation[i].trigger[j].brightness)
+									if(state.value != null && this.automation[i].trigger[j].value != null && state.value < this.automation[i].trigger[j].value
+									|| state.hue != null && this.automation[i].trigger[j].hue != null && state.hue < this.automation[i].trigger[j].hue
+									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation < this.automation[i].trigger[j].saturation
+									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness < this.automation[i].trigger[j].brightness)
 									{
 										eventLock.splice(index, 1);
 
@@ -185,10 +185,10 @@ module.exports = class Automation
 
 								if(this.automation[i].trigger[j].operation == '<' && positiveFired.includes(this.automation[i].trigger[j].id))
 								{
-									if(values.value != null && this.automation[i].trigger[j].value != null && values.value > this.automation[i].trigger[j].value
-									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue > this.automation[i].trigger[j].hue
-									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation > this.automation[i].trigger[j].saturation
-									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness > this.automation[i].trigger[j].brightness)
+									if(state.value != null && this.automation[i].trigger[j].value != null && state.value > this.automation[i].trigger[j].value
+									|| state.hue != null && this.automation[i].trigger[j].hue != null && state.hue > this.automation[i].trigger[j].hue
+									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation > this.automation[i].trigger[j].saturation
+									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness > this.automation[i].trigger[j].brightness)
 									{
 										eventLock.splice(index, 1);
 
@@ -198,10 +198,10 @@ module.exports = class Automation
 
 								if(this.automation[i].trigger[j].operation == '=')
 								{
-									if(values.value != null && this.automation[i].trigger[j].value != null && values.value != this.automation[i].trigger[j].value
-									|| values.hue != null && this.automation[i].trigger[j].hue != null && values.hue != this.automation[i].trigger[j].hue
-									|| values.saturation != null && this.automation[i].trigger[j].saturation != null && values.saturation != this.automation[i].trigger[j].saturation
-									|| values.brightness != null && this.automation[i].trigger[j].brightness != null && values.brightness != this.automation[i].trigger[j].brightness)
+									if(state.value != null && this.automation[i].trigger[j].value != null && state.value != this.automation[i].trigger[j].value
+									|| state.hue != null && this.automation[i].trigger[j].hue != null && state.hue != this.automation[i].trigger[j].hue
+									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation != this.automation[i].trigger[j].saturation
+									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness != this.automation[i].trigger[j].brightness)
 									{
 										eventLock.splice(index, 1);
 
@@ -217,7 +217,7 @@ module.exports = class Automation
 				{
 					if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
 					{
-						checkTrigger(this.automation[i], id, letters, values);
+						checkTrigger(this.automation[i], id, letters, state);
 					}
 				}
 
@@ -239,7 +239,7 @@ module.exports = class Automation
 	}
 };
 
-function checkTrigger(automation, id, letters, values)
+function checkTrigger(automation, id, letters, state)
 {
 	var trigger = null;
 
@@ -249,10 +249,10 @@ function checkTrigger(automation, id, letters, values)
 		{
 			if(automation.trigger[i].operation == '>')
 			{
-				if(values.value != null && automation.trigger[i].value != null && values.value > automation.trigger[i].value
-				|| values.hue != null && automation.trigger[i].hue != null && values.hue > automation.trigger[i].hue
-				|| values.saturation != null && automation.trigger[i].saturation != null && values.saturation > automation.trigger[i].saturation
-				|| values.brightness != null && automation.trigger[i].brightness != null && values.brightness > automation.trigger[i].brightness)
+				if(state.value != null && automation.trigger[i].value != null && state.value > automation.trigger[i].value
+				|| state.hue != null && automation.trigger[i].hue != null && state.hue > automation.trigger[i].hue
+				|| state.saturation != null && automation.trigger[i].saturation != null && state.saturation > automation.trigger[i].saturation
+				|| state.brightness != null && automation.trigger[i].brightness != null && state.brightness > automation.trigger[i].brightness)
 				{
 					trigger = automation.trigger[i];
 				}
@@ -260,10 +260,10 @@ function checkTrigger(automation, id, letters, values)
 
 			if(automation.trigger[i].operation == '<')
 			{
-				if(values.value != null && automation.trigger[i].value != null && values.value < automation.trigger[i].value
-				|| values.hue != null && automation.trigger[i].hue != null && values.hue < automation.trigger[i].hue
-				|| values.saturation != null && automation.trigger[i].saturation != null && values.saturation < automation.trigger[i].saturation
-				|| values.brightness != null && automation.trigger[i].brightness != null && values.brightness < automation.trigger[i].brightness)
+				if(state.value != null && automation.trigger[i].value != null && state.value < automation.trigger[i].value
+				|| state.hue != null && automation.trigger[i].hue != null && state.hue < automation.trigger[i].hue
+				|| state.saturation != null && automation.trigger[i].saturation != null && state.saturation < automation.trigger[i].saturation
+				|| state.brightness != null && automation.trigger[i].brightness != null && state.brightness < automation.trigger[i].brightness)
 				{
 					trigger = automation.trigger[i];
 				}
@@ -271,10 +271,10 @@ function checkTrigger(automation, id, letters, values)
 
 			if(automation.trigger[i].operation == '=')
 			{
-				if(values.value == null || automation.trigger[i].value == null || values.value == automation.trigger[i].value
-				&& (values.hue == null || automation.trigger[i].hue == null || values.hue == automation.trigger[i].hue)
-				&& (values.saturation == null || automation.trigger[i].saturation == null || values.saturation == automation.trigger[i].saturation)
-				&& (values.brightness == null || automation.trigger[i].brightness == null || values.brightness == automation.trigger[i].brightness))
+				if(state.value == null || automation.trigger[i].value == null || state.value == automation.trigger[i].value
+				&& (state.hue == null || automation.trigger[i].hue == null || state.hue == automation.trigger[i].hue)
+				&& (state.saturation == null || automation.trigger[i].saturation == null || state.saturation == automation.trigger[i].saturation)
+				&& (state.brightness == null || automation.trigger[i].brightness == null || state.brightness == automation.trigger[i].brightness))
 				{
 					trigger = automation.trigger[i];
 				}
@@ -284,7 +284,7 @@ function checkTrigger(automation, id, letters, values)
 
 	if(trigger != null)
 	{
-		logger.debug('Trigger Ausgelöst');
+		logger.debug('Automation [' + automation.name + '] Trigger Ausgelöst');
 
 		if(automation.condition != null && automation.condition.length > 0)
 		{
@@ -303,7 +303,7 @@ async function checkCondition(automation, trigger)
 
 	for(var i = 0; i < automation.condition.length; i++)
 	{
-		var values = null;
+		var state = null;
 
 		if(eventManager.pluginName != automation.condition[i].plugin && automation.condition[i].plugin != null && eventManager.RouteManager.getPort(automation.condition[i].plugin) != null)
 		{
@@ -314,7 +314,7 @@ async function checkCondition(automation, trigger)
 
 			try
 			{
-				values = await fetchRequest(theRequest, automation.name);
+				state = await fetchRequest(theRequest, automation.name);
 			}
 			catch(error)
 			{
@@ -323,17 +323,17 @@ async function checkCondition(automation, trigger)
 		}
 		else
 		{
-			values = dataManager.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);	
+			state = dataManager.readAccessoryService(automation.condition[i].id, automation.condition[i].letters, true);	
 		}
 
-		if(values != null)
+		if(state != null)
 		{
 			if(automation.condition[i].operation == '>')
 			{
-				if(values.state != null && automation.condition[i].value != null && values.state > automation.condition[i].value
-				|| values.hue != null && automation.condition[i].hue != null && values.hue > automation.condition[i].hue
-				|| values.saturation != null && automation.condition[i].saturation != null && values.saturation > automation.condition[i].saturation
-				|| values.brightness != null && automation.condition[i].brightness != null && values.brightness > automation.condition[i].brightness)
+				if(state.value != null && automation.condition[i].value != null && state.value > automation.condition[i].value
+				|| state.hue != null && automation.condition[i].hue != null && state.hue > automation.condition[i].hue
+				|| state.saturation != null && automation.condition[i].saturation != null && state.saturation > automation.condition[i].saturation
+				|| state.brightness != null && automation.condition[i].brightness != null && state.brightness > automation.condition[i].brightness)
 				{
 					condition++;
 				}
@@ -341,10 +341,10 @@ async function checkCondition(automation, trigger)
 
 			if(automation.condition[i].operation == '<')
 			{
-				if(values.state != null && automation.condition[i].value != null && values.state < automation.condition[i].value
-				|| values.hue != null && automation.condition[i].hue != null && values.hue < automation.condition[i].hue
-				|| values.saturation != null && automation.condition[i].saturation != null && values.saturation < automation.condition[i].saturation
-				|| values.brightness != null && automation.condition[i].brightness != null && values.brightness < automation.condition[i].brightness)
+				if(state.value != null && automation.condition[i].value != null && state.value < automation.condition[i].value
+				|| state.hue != null && automation.condition[i].hue != null && state.hue < automation.condition[i].hue
+				|| state.saturation != null && automation.condition[i].saturation != null && state.saturation < automation.condition[i].saturation
+				|| state.brightness != null && automation.condition[i].brightness != null && state.brightness < automation.condition[i].brightness)
 				{
 					condition++;
 				}
@@ -352,10 +352,10 @@ async function checkCondition(automation, trigger)
 
 			if(automation.condition[i].operation == '=')
 			{
-				if(values.state == null || automation.condition[i].value == null || values.state == automation.condition[i].value
-				&& (values.hue == null || automation.condition[i].hue == null || values.hue == automation.condition[i].hue)
-				&& (values.saturation == null || automation.condition[i].saturation == null || values.saturation == automation.condition[i].saturation)
-				&& (values.brightness == null || automation.condition[i].brightness == null || values.brightness == automation.condition[i].brightness))
+				if(state.value == null || automation.condition[i].value == null || state.value == automation.condition[i].value
+				&& (state.hue == null || automation.condition[i].hue == null || state.hue == automation.condition[i].hue)
+				&& (state.saturation == null || automation.condition[i].saturation == null || state.saturation == automation.condition[i].saturation)
+				&& (state.brightness == null || automation.condition[i].brightness == null || state.brightness == automation.condition[i].brightness))
 				{
 					condition++;
 				}
@@ -365,7 +365,7 @@ async function checkCondition(automation, trigger)
 
 	if(condition > 0 && ((automation.combination == null || automation.combination == 'ALL') && condition >= automation.condition.length) || automation.condition.combination == 'ONE')
 	{
-		logger.debug('Condition Erfüllt');
+		logger.debug('Automation [' + automation.name + '] Condition Erfüllt');
 
 		executeResult(automation, trigger);
 	}
