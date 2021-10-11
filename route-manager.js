@@ -19,7 +19,7 @@ module.exports = class RouteManager
 				{
 					for(const i in obj.platforms)
 					{
-						if(obj.platforms[i].automationDirectory != null && obj.platforms[i].port != null)
+						if(obj.platforms[i].baseDirectory != null && obj.platforms[i].port != null)
 						{
 							this.plugins.push({ name : obj.platforms[i].platform, port : obj.platforms[i].port });
 						}

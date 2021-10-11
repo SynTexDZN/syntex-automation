@@ -20,9 +20,9 @@ module.exports = class Automation
 
 			if(data != null)
 			{
-				eventLock = obj.eventLock || [];
-				positiveFired = obj.positiveFired || [];
-				negativeFired = obj.negativeFired || [];
+				eventLock = data.eventLock || [];
+				positiveFired = data.positiveFired || [];
+				negativeFired = data.negativeFired || [];
 			}
 			else
 			{
