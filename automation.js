@@ -24,10 +24,6 @@ module.exports = class Automation
 				positiveFired = data.positiveFired || [];
 				negativeFired = data.negativeFired || [];
 			}
-			else
-			{
-				logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %read_error%! ' + err);
-			}
 
 			this.loadAutomation();
 		});
@@ -223,13 +219,7 @@ module.exports = class Automation
 
 				resolve();
 
-				files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
-
-					if(!success)
-					{
-						logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-					}
-				});
+				files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired });
 			}
 			else
 			{
@@ -482,11 +472,6 @@ function executeResult(automation, trigger)
 	}
 
 	files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
-
-		if(!success)
-		{
-			logger.log('error', 'bridge', 'Bridge', 'Automation-Lock.json %update_error%! ' + err);
-		}
 
 		logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 	});
