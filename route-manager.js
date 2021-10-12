@@ -13,7 +13,7 @@ module.exports = class RouteManager
 
 				if(!obj || err)
 				{
-					this.logger.log('error', 'bridge', 'Bridge', 'Config.json %read_error%!');
+					this.logger.log('error', 'bridge', 'Bridge', 'Config.json %read_error%!', err);
 				}
 				else
 				{
