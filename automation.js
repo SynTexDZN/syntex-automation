@@ -374,16 +374,24 @@ function executeResult(automation, trigger)
 
 		if(automation.result[i].id != null && automation.result[i].letters != null && automation.result[i].value != null && automation.result[i].name != null)
 		{
-			var state = null;
+			var state = { value : automation.result[i].value };
 
-			var values = {
-				value : automation.result[i].value,
-				hue : automation.result[i].hue,
-				saturation : automation.result[i].saturation,
-				brightness : automation.result[i].brightness
-			};
+			if(automation.result[i].hue != null)
+			{
+				state.hue = automation.result[i].hue;
+			}
 
-			if((state = TypeManager.validateUpdate(automation.result[i].id, automation.result[i].letters, values)) != null)
+			if(automation.result[i].saturation != null)
+			{
+				state.saturation = automation.result[i].saturation;
+			}
+
+			if(automation.result[i].brightness != null)
+			{
+				state.brightness = automation.result[i].brightness;
+			}
+
+			if((state = TypeManager.validateUpdate(automation.result[i].id, automation.result[i].letters, state)) != null)
 			{
 				if(TypeManager.letterToType(automation.result[i].letters[0]) == 'statelessswitch')
 				{
