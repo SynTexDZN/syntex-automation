@@ -16,7 +16,7 @@ module.exports = class Automation
 		
 		TypeManager = new TypeManager(logger);
 
-		files.readFile('/automation/automation-lock.json').then((data) => {
+		files.readFile('automation/automation-lock.json').then((data) => {
 
 			if(data != null)
 			{
@@ -33,7 +33,7 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 
-			files.readFile('/automation/automation.json').then((data) => {
+			files.readFile('automation/automation.json').then((data) => {
 
 				if(data != null)
 				{
@@ -219,7 +219,7 @@ module.exports = class Automation
 
 				resolve();
 
-				files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired });
+				files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired });
 			}
 			else
 			{
@@ -479,7 +479,7 @@ function executeResult(automation, trigger)
 		}
 	}
 
-	files.writeFile('/automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
+	files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
 
 		logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 	});
