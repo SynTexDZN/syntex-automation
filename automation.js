@@ -43,7 +43,7 @@ module.exports = class Automation
 
 					this.parseAutomation();
 
-					logger.log('success', 'bridge', 'Bridge', '%automation_load_success%!');
+					logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
 				}
 				else
 				{
@@ -51,7 +51,7 @@ module.exports = class Automation
 
 					resolve(false);
 
-					logger.log('warn', 'bridge', 'Bridge', '%automation_load_error%!');
+					logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
 				}
 
 				ready = true;
@@ -146,7 +146,7 @@ module.exports = class Automation
 		}
 		catch(e)
 		{
-			this.logger.log('error', 'bridge', 'Bridge', 'Automation %json_parse_error%!', e);
+			this.logger.log('error', 'automation', 'Automation', 'Automation %json_parse_error%!', e);
 		}
 	}
 
@@ -304,11 +304,11 @@ async function checkCondition(automation, trigger)
 
 			try
 			{
-				state = await fetchRequest(theRequest, automation.name);
+				state = await fetchRequest(theRequest, automation.name, automation.condition[i]);
 			}
 			catch(e)
 			{
-				this.logger.log('error', 'bridge', 'Bridge', 'Condition Request %json_parse_error%!', e);
+				this.logger.log('error', 'automation', 'Automation', 'Condition Request %json_parse_error%!', e);
 			}
 		}
 		else
@@ -421,7 +421,7 @@ function executeResult(automation, trigger)
 						theRequest.url += '&brightness=' + state.brightness;
 					}
 
-					fetchRequest(theRequest, automation.name);
+					fetchRequest(theRequest, automation.name, automation.result[i]);
 				}
 				else
 				{
@@ -441,7 +441,7 @@ function executeResult(automation, trigger)
 				timeout : 10000
 			};
 
-			fetchRequest(theRequest, automation.name);
+			fetchRequest(theRequest, automation.name, automation.result[i]);
 		}
 
 		if(!eventLock.includes(automation.id))
@@ -485,7 +485,7 @@ function executeResult(automation, trigger)
 	});
 }
 
-function fetchRequest(theRequest, name)
+function fetchRequest(theRequest, name, element)
 {
 	return new Promise((resolve) => {
 
@@ -493,7 +493,7 @@ function fetchRequest(theRequest, name)
 
 			resolve(null);
 
-			logger.log('error', 'bridge', 'Bridge', '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err);
+			logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err);
 		});
 	});
 }
