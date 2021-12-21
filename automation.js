@@ -175,7 +175,7 @@ module.exports = class Automation
 									{
 										eventLock.splice(index, 1);
 
-										logger.debug('Automation [' + this.automation[i].name + '] Unterschritten ' + this.automation[i].id);
+										logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id);
 									}
 								}
 
@@ -188,7 +188,7 @@ module.exports = class Automation
 									{
 										eventLock.splice(index, 1);
 
-										logger.debug('Automation [' + this.automation[i].name + '] Überschritten ' + this.automation[i].id);
+										logger.debug('Automation [' + this.automation[i].name + '] %automation_greater% ' + this.automation[i].id);
 									}
 								}
 
@@ -201,7 +201,7 @@ module.exports = class Automation
 									{
 										eventLock.splice(index, 1);
 
-										logger.debug('Automation [' + this.automation[i].name + '] Ungleich ' + this.automation[i].id);
+										logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id);
 									}
 								}
 							}
@@ -274,7 +274,7 @@ function checkTrigger(automation, id, letters, state)
 
 	if(trigger != null)
 	{
-		logger.debug('Automation [' + automation.name + '] Trigger Ausgelöst');
+		logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
 		if(automation.condition != null && automation.condition.length > 0)
 		{
@@ -355,7 +355,7 @@ async function checkCondition(automation, trigger)
 
 	if(condition > 0 && ((automation.combination == null || automation.combination == 'ALL') && condition >= automation.condition.length) || automation.condition.combination == 'ONE')
 	{
-		logger.debug('Automation [' + automation.name + '] Condition Erfüllt');
+		logger.debug('Automation [' + automation.name + '] %condition_fulfilled%');
 
 		executeResult(automation, trigger);
 	}
