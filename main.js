@@ -13,7 +13,7 @@ module.exports = class AutomationSystem extends EventEmitter
 		this.logger = logger;
 		this.pluginName = pluginName;
 
-		this.RouteManager = new RouteManager(logger, configPath);
+		this.RouteManager = new RouteManager(logger, files, configPath);
 		this.LogikEngine = new LogikEngine(logger, files, dataManager, this);
 	}
 
