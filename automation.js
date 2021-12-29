@@ -481,7 +481,10 @@ function executeResult(automation, trigger)
 
 	files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
 
-		logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+		if(success)
+		{
+			logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+		}
 	});
 }
 
@@ -493,7 +496,7 @@ function fetchRequest(theRequest, name, element)
 
 			resolve(null);
 
-			logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err);
+			logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err.stack);
 		});
 	});
 }
