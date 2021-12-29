@@ -8,7 +8,7 @@ module.exports = class AutomationSystem extends EventEmitter
 	{
 		super();
 
-		super.setMaxListeners(256);
+		super.setMaxListeners(512);
 
 		this.logger = logger;
 		this.pluginName = pluginName;
