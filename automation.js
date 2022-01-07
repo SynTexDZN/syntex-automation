@@ -479,9 +479,9 @@ function executeResult(automation, trigger)
 		}
 	}
 
-	files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((success) => {
+	files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((response) => {
 
-		if(success)
+		if(response.success)
 		{
 			logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 		}
