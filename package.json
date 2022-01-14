@@ -11,7 +11,7 @@
 	"dependencies": {
 		"axios": "^0.21.1",
 		"syntex-filesystem": "1.0.2-b6",
-		"syntex-logger": "1.0.8-b10"
+		"syntex-logger": "1.0.8-b11"
 	},
 	"keywords": [
 		"syntex",
