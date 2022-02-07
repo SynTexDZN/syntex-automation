@@ -4,17 +4,17 @@ const EventEmitter = require('events');
 
 module.exports = class AutomationSystem extends EventEmitter
 {
-	constructor(logger, files, dataManager, pluginName, configPath)
+	constructor(platform)
 	{
 		super();
 
 		super.setMaxListeners(512);
 
-		this.logger = logger;
-		this.pluginName = pluginName;
+		this.pluginName = platform.pluginName;
+		this.logger = platform.logger;
 
-		this.RouteManager = new RouteManager(logger, files, configPath);
-		this.LogikEngine = new LogikEngine(logger, files, dataManager, this);
+		this.RouteManager = new RouteManager(platform.logger, platform.files, platform.api.user.storagePath());
+		this.LogikEngine = new LogikEngine(platform.logger, platform.files, platform, this);
 	}
 
 	setInputStream(stream, callback)
