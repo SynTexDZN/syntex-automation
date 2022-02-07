@@ -156,7 +156,7 @@ module.exports = class Automation
 		
 			if(ready)
 			{
-				for(var i = 0; i < this.automation.length; i++)
+				for(let i = 0; i < this.automation.length; i++)
 				{
 					if(eventLock.includes(this.automation[i].id))
 					{
@@ -209,7 +209,7 @@ module.exports = class Automation
 					}
 				}
 
-				for(var i = 0; i < this.automation.length; i++)
+				for(let i = 0; i < this.automation.length; i++)
 				{
 					if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
 					{
@@ -401,7 +401,7 @@ function executeResult(automation, trigger)
 
 				if(eventManager.pluginName != automation.result[i].plugin && automation.result[i].plugin != null && eventManager.RouteManager.getPort(automation.result[i].plugin) != null)
 				{
-					var theRequest = {
+					let theRequest = {
 						url : 'http://' + (automation.result[i].bridge || '127.0.0.1') + ':' + eventManager.RouteManager.getPort(automation.result[i].plugin) + '/devices?id=' + automation.result[i].id + '&type=' + TypeManager.letterToType(automation.result[i].letters[0]) + '&counter=' + automation.result[i].letters[1] + '&value=' + state.value,
 						timeout : 10000
 					};
@@ -436,7 +436,7 @@ function executeResult(automation, trigger)
 
 		if(url != '')
 		{
-			var theRequest = {
+			let theRequest = {
 				url : url,
 				timeout : 10000
 			};
@@ -455,7 +455,7 @@ function executeResult(automation, trigger)
 			{
 				negativeFired.push(trigger.id);
 
-				var index = positiveFired.indexOf(trigger.id);
+				let index = positiveFired.indexOf(trigger.id);
 
 				if(index > -1)
 				{
@@ -469,7 +469,7 @@ function executeResult(automation, trigger)
 			{
 				positiveFired.push(trigger.id);
 
-				var index = negativeFired.indexOf(trigger.id);
+				let index = negativeFired.indexOf(trigger.id);
 
 				if(index > -1)
 				{
