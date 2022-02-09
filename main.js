@@ -9,23 +9,31 @@ module.exports = class AutomationSystem extends EventEmitter
 		super();
 
 		super.setMaxListeners(512);
-
+    
 		this.pluginName = platform.pluginName;
 		this.logger = platform.logger;
 
 		this.RouteManager = new RouteManager(platform.logger, platform.files, platform.api.user.storagePath());
 		this.LogikEngine = new LogikEngine(platform.logger, platform.files, platform, this);
+    }
+
+    setInputStream(stream, sender, callback)
+	{
+		super.on(stream, (destination, state) => {
+			
+			if(sender.id == destination.id && sender.letters == destination.letters)
+			{
+				callback(state);
+
+				this.logger.debug('<<< ' + stream + ' [' + JSON.stringify(destination) + '] ' + JSON.stringify(state));
+			}
+		});
 	}
 
-	setInputStream(stream, callback)
+	setOutputStream(stream, destination, state)
 	{
-		super.on(stream, (reciever, values) => callback(reciever, values));
-	}
+		super.emit(stream, destination, state);
 
-	setOutputStream(stream, reciever, values)
-	{
-		super.emit(stream, reciever, values);
-
-		this.logger.debug('>>> ' + stream + ' ' + JSON.stringify(reciever) + ' ' + JSON.stringify(values));
+		this.logger.debug('>>> ' + stream + ' [' + JSON.stringify(destination) + '] ' + JSON.stringify(state));
 	}
 }
