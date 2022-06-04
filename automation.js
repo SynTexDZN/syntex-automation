@@ -1,11 +1,15 @@
 const axios = require('axios');
 
-var eventLock = [], positiveFired = [], negativeFired = [], ready = false;
-
 module.exports = class Automation
 {
 	constructor(platform, manager)
 	{
+		this.ready = false;
+
+		this.eventLock = [];
+		this.positiveFired = [];
+		this.negativeFired = [];
+
 		this.platform = platform;
 
 		this.logger = platform.logger;
@@ -19,9 +23,9 @@ module.exports = class Automation
 
 			if(data != null)
 			{
-				eventLock = data.eventLock || [];
-				positiveFired = data.positiveFired || [];
-				negativeFired = data.negativeFired || [];
+				this.eventLock = data.eventLock || [];
+				this.positiveFired = data.positiveFired || [];
+				this.negativeFired = data.negativeFired || [];
 			}
 
 			this.loadAutomation();
@@ -53,7 +57,7 @@ module.exports = class Automation
 					this.logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
 				}
 
-				ready = true;
+				this.ready = true;
 			});
 		});
 	}
@@ -153,39 +157,39 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 		
-			if(ready)
+			if(this.ready)
 			{
 				for(let i = 0; i < this.automation.length; i++)
 				{
-					if(eventLock.includes(this.automation[i].id))
+					if(this.eventLock.includes(this.automation[i].id))
 					{
 						for(var j = 0; j < this.automation[i].trigger.length; j++)
 						{
 							if(this.automation[i].trigger[j].id == id && this.automation[i].trigger[j].letters == letters)
 							{
-								var index = eventLock.indexOf(this.automation[i].id);
+								var index = this.eventLock.indexOf(this.automation[i].id);
 
-								if(this.automation[i].trigger[j].operation == '>' && negativeFired.includes(this.automation[i].trigger[j].id))
+								if(this.automation[i].trigger[j].operation == '>' && this.negativeFired.includes(this.automation[i].trigger[j].id))
 								{
 									if(state.value != null && this.automation[i].trigger[j].value != null && state.value < this.automation[i].trigger[j].value
 									|| state.hue != null && this.automation[i].trigger[j].hue != null && state.hue < this.automation[i].trigger[j].hue
 									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation < this.automation[i].trigger[j].saturation
 									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness < this.automation[i].trigger[j].brightness)
 									{
-										eventLock.splice(index, 1);
+										this.eventLock.splice(index, 1);
 
 										this.logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id);
 									}
 								}
 
-								if(this.automation[i].trigger[j].operation == '<' && positiveFired.includes(this.automation[i].trigger[j].id))
+								if(this.automation[i].trigger[j].operation == '<' && this.positiveFired.includes(this.automation[i].trigger[j].id))
 								{
 									if(state.value != null && this.automation[i].trigger[j].value != null && state.value > this.automation[i].trigger[j].value
 									|| state.hue != null && this.automation[i].trigger[j].hue != null && state.hue > this.automation[i].trigger[j].hue
 									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation > this.automation[i].trigger[j].saturation
 									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness > this.automation[i].trigger[j].brightness)
 									{
-										eventLock.splice(index, 1);
+										this.eventLock.splice(index, 1);
 
 										this.logger.debug('Automation [' + this.automation[i].name + '] %automation_greater% ' + this.automation[i].id);
 									}
@@ -198,7 +202,7 @@ module.exports = class Automation
 									|| state.saturation != null && this.automation[i].trigger[j].saturation != null && state.saturation != this.automation[i].trigger[j].saturation
 									|| state.brightness != null && this.automation[i].trigger[j].brightness != null && state.brightness != this.automation[i].trigger[j].brightness)
 									{
-										eventLock.splice(index, 1);
+										this.eventLock.splice(index, 1);
 
 										this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id);
 									}
@@ -210,7 +214,7 @@ module.exports = class Automation
 
 				for(let i = 0; i < this.automation.length; i++)
 				{
-					if(this.automation[i].active && !eventLock.includes(this.automation[i].id))
+					if(this.automation[i].active && !this.eventLock.includes(this.automation[i].id))
 					{
 						this.checkTrigger(this.automation[i], id, letters, state);
 					}
@@ -218,7 +222,7 @@ module.exports = class Automation
 
 				resolve();
 
-				this.files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired });
+				this.files.writeFile('automation/automation-lock.json', { eventLock : this.eventLock, positiveFired : this.positiveFired, negativeFired : this.negativeFired });
 			}
 			else
 			{
@@ -442,42 +446,42 @@ module.exports = class Automation
 				this.fetchRequest(theRequest, automation.name, automation.result[i]);
 			}
 
-			if(!eventLock.includes(automation.id))
+			if(!this.eventLock.includes(automation.id))
 			{
-				eventLock.push(automation.id);
+				this.eventLock.push(automation.id);
 			}
 
 			if(trigger.operation == '<')
 			{
-				if(!negativeFired.includes(trigger.id))
+				if(!this.negativeFired.includes(trigger.id))
 				{
-					negativeFired.push(trigger.id);
+					this.negativeFired.push(trigger.id);
 
-					let index = positiveFired.indexOf(trigger.id);
+					let index = this.positiveFired.indexOf(trigger.id);
 
 					if(index > -1)
 					{
-						positiveFired.splice(index, 1);
+						this.positiveFired.splice(index, 1);
 					}
 				}
 			}
 			else if(trigger.operation == '>')
 			{
-				if(!positiveFired.includes(trigger.id))
+				if(!this.positiveFired.includes(trigger.id))
 				{
-					positiveFired.push(trigger.id);
+					this.positiveFired.push(trigger.id);
 
-					let index = negativeFired.indexOf(trigger.id);
+					let index = this.negativeFired.indexOf(trigger.id);
 
 					if(index > -1)
 					{
-						negativeFired.splice(index, 1);
+						this.negativeFired.splice(index, 1);
 					}
 				}
 			}
 		}
 
-		this.files.writeFile('automation/automation-lock.json', { eventLock : eventLock, positiveFired : positiveFired, negativeFired : negativeFired }).then((response) => {
+		this.files.writeFile('automation/automation-lock.json', { eventLock : this.eventLock, positiveFired : this.positiveFired, negativeFired : this.negativeFired }).then((response) => {
 
 			if(response.success)
 			{
