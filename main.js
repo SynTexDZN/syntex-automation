@@ -14,7 +14,7 @@ module.exports = class AutomationSystem extends EventEmitter
 		this.logger = platform.logger;
 
 		this.RouteManager = new RouteManager(platform.logger, platform.files, platform.api.user.storagePath());
-		this.LogikEngine = new LogikEngine(platform.logger, platform.files, platform, this);
+		this.LogikEngine = new LogikEngine(platform, this);
     }
 
     setInputStream(stream, sender, callback)
