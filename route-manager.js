@@ -15,7 +15,7 @@ module.exports = class RouteManager
 				{
 					for(const i in data.platforms)
 					{
-						if(data.platforms[i].baseDirectory != null && (data.platforms[i].port != null || data.platforms[i].options.port))
+						if(data.platforms[i].baseDirectory != null && (data.platforms[i].port != null || (data.platforms[i].options != null && data.platforms[i].options.port != null)))
 						{
 							this.plugins.push({ name : data.platforms[i].platform, port : (data.platforms[i].port || data.platforms[i].options.port) });
 						}
