@@ -15,6 +15,7 @@ module.exports = class Automation
 		this.logger = platform.logger;
 		this.files = platform.files;
 
+		this.ContextManager = platform.ContextManager;
 		this.TypeManager = platform.TypeManager;
 
 		this.manager = manager;
@@ -480,6 +481,8 @@ module.exports = class Automation
 				}
 			}
 		}
+
+		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
 		this.files.writeFile('automation/automation-lock.json', { eventLock : this.eventLock, positiveFired : this.positiveFired, negativeFired : this.negativeFired }).then((response) => {
 
