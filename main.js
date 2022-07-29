@@ -1,4 +1,4 @@
-let LogikEngine = require('./automation'), RouteManager = require('./route-manager');
+let LogikEngine = require('./src/automation'), RouteManager = require('./src/route-manager');
 
 const EventEmitter = require('events');
 
