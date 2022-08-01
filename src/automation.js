@@ -106,24 +106,27 @@ module.exports = class Automation
 				{
 					for(const j in this.automation[i].result)
 					{
-						if(this.automation[i].result[j].state.value != null)
+						if(this.automation[i].result[j].state != null)
 						{
-							this.automation[i].result[j].state.value = JSON.parse(this.automation[i].result[j].state.value);
-						}
+							if(this.automation[i].result[j].state.value != null)
+							{
+								this.automation[i].result[j].state.value = JSON.parse(this.automation[i].result[j].state.value);
+							}
 
-						if(this.automation[i].result[j].state.hue != null)
-						{
-							this.automation[i].result[j].state.hue = JSON.parse(this.automation[i].result[j].state.hue);
-						}
+							if(this.automation[i].result[j].state.hue != null)
+							{
+								this.automation[i].result[j].state.hue = JSON.parse(this.automation[i].result[j].state.hue);
+							}
 
-						if(this.automation[i].result[j].state.saturation != null)
-						{
-							this.automation[i].result[j].state.saturation = JSON.parse(this.automation[i].result[j].state.saturation);
-						}
+							if(this.automation[i].result[j].state.saturation != null)
+							{
+								this.automation[i].result[j].state.saturation = JSON.parse(this.automation[i].result[j].state.saturation);
+							}
 
-						if(this.automation[i].result[j].state.brightness != null)
-						{
-							this.automation[i].result[j].state.brightness = JSON.parse(this.automation[i].result[j].state.brightness);
+							if(this.automation[i].result[j].state.brightness != null)
+							{
+								this.automation[i].result[j].state.brightness = JSON.parse(this.automation[i].result[j].state.brightness);
+							}
 						}
 					}
 				}
@@ -138,12 +141,31 @@ module.exports = class Automation
 	runAutomation(service, state)
 	{
 		return new Promise((resolve) => {
+
+			const INCLUDES = (automation, id, letters) => {
+
+				for(const i in automation.groups)
+				{
+					if(automation.groups[i].blocks != null)
+					{
+						for(const j in automation.groups[i].blocks[j])
+						{
+							if(automation.groups[i].blocks[j].id == id && automation.groups[i].blocks[j].letters == letters)
+							{
+								return true;
+							}
+						}
+					}
+				}
+	
+				return false;
+			};
 		
 			if(this.ready)
 			{
 				for(const i in this.automation)
 				{
-					if(this.automation[i].active && (this.timeLock[this.automation[i].id] == null || new Date().getTime() >= this.timeLock[this.automation[i].id]))
+					if(INCLUDES(this.automation[i], service.id, service.letters) && this.automation[i].active && (this.timeLock[this.automation[i].id] == null || new Date().getTime() >= this.timeLock[this.automation[i].id]))
 					{
 						this.checkTrigger(this.automation[i], service, state);
 					}
@@ -255,29 +277,13 @@ module.exports = class Automation
 			return success;
 		};
 
-		const INCLUDES = (group) => {
-
-			if(group.blocks != null)
-			{
-				for(const i in group.blocks)
-				{
-					if(group.blocks[i].id == service.id && group.blocks[i].letters == service.letters)
-					{
-						return true;
-					}
-				}
-			}
-
-			return false;
-		};
-
 		var promiseArray = [];
 
 		if(automation.trigger != null && automation.trigger.groups != null)
 		{
 			for(const i in automation.trigger.groups)
 			{
-				if(automation.trigger.groups[i].blocks != null && automation.trigger.groups[i].logic != null && INCLUDES(automation.trigger.groups[i]))
+				if(automation.trigger.groups[i].blocks != null && automation.trigger.groups[i].logic != null)
 				{
 					promiseArray.push(TRIGGER(automation.trigger.groups[i].blocks, automation.trigger.groups[i].logic, service.id, service.letters));
 				}
