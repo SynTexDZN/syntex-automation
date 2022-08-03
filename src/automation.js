@@ -6,9 +6,7 @@ module.exports = class Automation
 	{
 		this.ready = false;
 
-		this.eventLock = [];
-		this.positiveFired = [];
-		this.negativeFired = [];
+		this.stateLock = [];
 
 		this.platform = platform;
 
@@ -25,6 +23,7 @@ module.exports = class Automation
 			if(data != null)
 			{
 				this.timeLock = data.timeLock || {};
+				this.stateLock = data.stateLock || [];
 			}
 
 			this.loadAutomation();
@@ -144,15 +143,18 @@ module.exports = class Automation
 
 			const INCLUDES = (automation, id, letters) => {
 
-				for(const i in automation.groups)
+				if(automation.trigger != null)
 				{
-					if(automation.groups[i].blocks != null)
+					for(const i in automation.trigger.groups)
 					{
-						for(const j in automation.groups[i].blocks[j])
+						if(automation.trigger.groups[i].blocks != null)
 						{
-							if(automation.groups[i].blocks[j].id == id && automation.groups[i].blocks[j].letters == letters)
+							for(const j in automation.trigger.groups[i].blocks)
 							{
-								return true;
+								if(automation.trigger.groups[i].blocks[j].id == id && automation.trigger.groups[i].blocks[j].letters == letters)
+								{
+									return true;
+								}
 							}
 						}
 					}
@@ -160,12 +162,12 @@ module.exports = class Automation
 	
 				return false;
 			};
-		
+
 			if(this.ready)
 			{
 				for(const i in this.automation)
 				{
-					if(INCLUDES(this.automation[i], service.id, service.letters) && this.automation[i].active && (this.timeLock[this.automation[i].id] == null || new Date().getTime() >= this.timeLock[this.automation[i].id]))
+					if(this.automation[i].active && INCLUDES(this.automation[i], service.id, service.letters))
 					{
 						this.checkTrigger(this.automation[i], service, state);
 					}
@@ -294,9 +296,20 @@ module.exports = class Automation
 
 			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
 			{
-				this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
+				if(!this.stateLock.includes(automation.id) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
+				{
+					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
-				this.executeResult(automation, service);
+					this.executeResult(automation, service);
+				}
+			}
+			else if(this.stateLock.includes(automation.id))
+			{
+				var index = this.stateLock.indexOf(automation.id);
+
+				this.stateLock.splice(index, 1);
+
+				this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id);
 			}
 		});
 	}
@@ -377,6 +390,8 @@ module.exports = class Automation
 
 	executeResult(automation, trigger)
 	{
+		var success = false;
+
 		for(const i in automation.result)
 		{
 			var result = automation.result[i];
@@ -390,7 +405,7 @@ module.exports = class Automation
 
 				this.fetchRequest(theRequest, automation.name, result);
 
-				this._automationSuccess(automation, trigger);
+				success = true;
 			}
 
 			if(result.id != null && result.letters != null && result.state != null && result.name != null)
@@ -424,13 +439,18 @@ module.exports = class Automation
 						this.manager.setOutputStream('SynTexAutomation', { id : result.id, letters : result.letters }, state);
 					}
 
-					this._automationSuccess(automation, trigger);
+					success = true;
 				}
 				else
 				{
 					this.logger.log('error', result.id, result.letters, '[' + result.name + '] %update_error%! ( ' + result.id + ' )');
 				}
 			}
+		}
+
+		if(success)
+		{
+			this._automationSuccess(automation, trigger);
 		}
 	}
 
@@ -455,9 +475,15 @@ module.exports = class Automation
 		{
 			this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
 
-			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock });
+			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 		}
-		
+		else if(!this.stateLock.includes(automation.id))
+		{
+			this.stateLock.push(automation.id);
+
+			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+		}
+
 		this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 	}
 	
