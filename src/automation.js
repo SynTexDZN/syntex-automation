@@ -6,8 +6,6 @@ module.exports = class Automation
 	{
 		this.ready = false;
 
-		this.stateLock = [];
-
 		this.platform = platform;
 
 		this.logger = platform.logger;
@@ -23,7 +21,7 @@ module.exports = class Automation
 			if(data != null)
 			{
 				this.timeLock = data.timeLock || {};
-				this.stateLock = data.stateLock || [];
+				this.stateLock = data.stateLock || {};
 			}
 
 			this.loadAutomation();
@@ -296,18 +294,16 @@ module.exports = class Automation
 
 			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
 			{
-				if(((automation.options != null && automation.options.stateLock == false) || !this.stateLock.includes(automation.id)) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
+				if(((automation.options != null && automation.options.stateLock == false) || this.stateLock[automation.id] == null) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
 				{
 					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
 					this.executeResult(automation, service);
 				}
 			}
-			else if(this.stateLock.includes(automation.id))
+			else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
 			{
-				var index = this.stateLock.indexOf(automation.id);
-
-				this.stateLock.splice(index, 1);
+				this.stateLock[automation.id].result = false;
 
 				this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id);
 			}
@@ -471,17 +467,33 @@ module.exports = class Automation
 	{
 		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
-		if(automation.options != null && automation.options.timeLock != null)
+		if(automation.options != null)
 		{
-			this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
+			var changed = false;
 
-			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-		}
-		else if(!this.stateLock.includes(automation.id))
-		{
-			this.stateLock.push(automation.id);
+			if(automation.options.timeLock != null)
+			{
+				this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
 
-			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+				changed = true;
+			}
+
+			if(automation.options.stateLock != false)
+			{
+				if(this.stateLock[automation.id] == null)
+				{
+					this.stateLock[automation.id] = {};
+				}
+
+				this.stateLock[automation.id].result = true;
+
+				changed = true;
+			}
+
+			if(changed)
+			{
+				this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+			}
 		}
 
 		this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
