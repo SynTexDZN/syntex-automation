@@ -296,7 +296,7 @@ module.exports = class Automation
 
 			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
 			{
-				if(!this.stateLock.includes(automation.id) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
+				if(((automation.options != null && automation.options.stateLock == false) || !this.stateLock.includes(automation.id)) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
 				{
 					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
