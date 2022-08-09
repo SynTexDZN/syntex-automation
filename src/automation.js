@@ -5,6 +5,9 @@ module.exports = class Automation
 	constructor(platform, manager)
 	{
 		this.ready = false;
+		
+		this.timeLock = {};
+		this.stateLock = {};
 
 		this.platform = platform;
 
@@ -163,12 +166,76 @@ module.exports = class Automation
 
 			if(this.ready)
 			{
+				var changed = false;
+
 				for(const i in this.automation)
 				{
 					if(this.automation[i].active && INCLUDES(this.automation[i], service.id, service.letters))
 					{
+						if(this.stateLock[this.automation[i].id] != null && this.stateLock[this.automation[i].id].trigger != null && this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] != null)
+						{
+							for(const j in this.automation[i].trigger.groups)
+							{
+								for(const k in this.automation[i].trigger.groups[j].blocks)
+								{
+									if(this.automation[i].trigger.groups[j].blocks[k].id == service.id && this.automation[i].trigger.groups[j].blocks[k].letters == service.letters)
+									{
+										if(this.automation[i].trigger.groups[j].blocks[k].operation == '>')
+										{
+											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value < this.automation[i].trigger.groups[j].blocks[k].state.value
+											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue < this.automation[i].trigger.groups[j].blocks[k].state.hue
+											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation < this.automation[i].trigger.groups[j].blocks[k].state.saturation
+											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness < this.automation[i].trigger.groups[j].blocks[k].state.brightness)
+											{
+												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
+
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
+											
+												changed = true;
+											}
+										}
+
+										if(this.automation[i].trigger.groups[j].blocks[k].operation == '<')
+										{
+											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value > this.automation[i].trigger.groups[j].blocks[k].state.value
+											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue > this.automation[i].trigger.groups[j].blocks[k].state.hue
+											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation > this.automation[i].trigger.groups[j].blocks[k].state.saturation
+											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness > this.automation[i].trigger.groups[j].blocks[k].state.brightness)
+											{
+												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
+
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_greater% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
+											
+												changed = true;
+											}
+										}
+
+										if(this.automation[i].trigger.groups[j].blocks[k].operation == '=')
+										{
+											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value != this.automation[i].trigger.groups[j].blocks[k].state.value
+											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue != this.automation[i].trigger.groups[j].blocks[k].state.hue
+											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation != this.automation[i].trigger.groups[j].blocks[k].state.saturation
+											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness != this.automation[i].trigger.groups[j].blocks[k].state.brightness)
+											{
+												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
+
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
+											
+												changed = true;
+											}
+										}
+									}
+								}
+							}
+						}
+
 						this.checkTrigger(this.automation[i], service, state);
 					}
+				}
+
+				if(changed)
+				{
+					this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 				}
 			}
 			
@@ -277,6 +344,32 @@ module.exports = class Automation
 			return success;
 		};
 
+		const HAS_LOCK = () => {
+
+			if(automation.trigger != null && automation.trigger.groups != null)
+			{
+				for(const i in automation.trigger.groups)
+				{
+					if(automation.trigger.groups[i].blocks != null)
+					{
+						for(const j in automation.trigger.groups[i].blocks)
+						{
+							if(automation.trigger.groups[i].blocks[j].options != null
+							&& automation.trigger.groups[i].blocks[j].options.stateLock == true)
+							{
+								if(this.stateLock[automation.id] != null && this.stateLock[automation.id].trigger != null && this.stateLock[automation.id].trigger[service.id + '#' + service.letters] == true)
+								{
+									return true;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return false;
+		};
+
 		var promiseArray = [];
 
 		if(automation.trigger != null && automation.trigger.groups != null)
@@ -294,11 +387,17 @@ module.exports = class Automation
 
 			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
 			{
-				if(((automation.options != null && automation.options.stateLock == false) || this.stateLock[automation.id] == null) && (this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id]))
+				if(this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id])
 				{
-					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
+					if((automation.options != null && automation.options.stateLock == false) || this.stateLock[automation.id] == null || this.stateLock[automation.id].result != true)
+					{
+						if(!HAS_LOCK())
+						{
+							this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
-					this.executeResult(automation, service);
+							this.executeResult(automation, service);
+						}
+					}
 				}
 			}
 			else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
@@ -465,35 +564,55 @@ module.exports = class Automation
 
 	_automationSuccess(automation, trigger)
 	{
+		var changed = false;
+
 		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
-		if(automation.options != null)
+		if(automation.options != null && automation.options.timeLock != null)
 		{
-			var changed = false;
+			this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
 
-			if(automation.options.timeLock != null)
+			changed = true;
+		}
+
+		for(const i in automation.trigger.groups)
+		{
+			for(const j in automation.trigger.groups[i].blocks)
 			{
-				this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
-
-				changed = true;
-			}
-
-			if(automation.options.stateLock != false)
-			{
-				if(this.stateLock[automation.id] == null)
+				if(automation.trigger.groups[i].blocks[j].options != null && automation.trigger.groups[i].blocks[j].options.stateLock == true)
 				{
-					this.stateLock[automation.id] = {};
+					if(this.stateLock[automation.id] == null)
+					{
+						this.stateLock[automation.id] = {};
+					}
+
+					if(this.stateLock[automation.id].trigger == null)
+					{
+						this.stateLock[automation.id].trigger = {};
+					}
+
+					this.stateLock[automation.id].trigger[automation.trigger.groups[i].blocks[j].id + '#' + automation.trigger.groups[i].blocks[j].letters] = true;
+
+					changed = true;
 				}
-
-				this.stateLock[automation.id].result = true;
-
-				changed = true;
 			}
+		}
 
-			if(changed)
+		if(automation.options == null || automation.options.stateLock == true)
+		{
+			if(this.stateLock[automation.id] == null)
 			{
-				this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+				this.stateLock[automation.id] = {};
 			}
+
+			this.stateLock[automation.id].result = true;
+
+			changed = true;
+		}
+
+		if(changed)
+		{
+			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 		}
 
 		this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
