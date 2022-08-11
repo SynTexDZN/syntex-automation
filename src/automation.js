@@ -164,6 +164,32 @@ module.exports = class Automation
 				return false;
 			};
 
+			const HAS_LOCK = (automation) => {
+
+				if(automation.trigger != null && automation.trigger.groups != null)
+				{
+					for(const i in automation.trigger.groups)
+					{
+						if(automation.trigger.groups[i].blocks != null)
+						{
+							for(const j in automation.trigger.groups[i].blocks)
+							{
+								if(automation.trigger.groups[i].blocks[j].options != null
+								&& automation.trigger.groups[i].blocks[j].options.stateLock == true)
+								{
+									if(this.stateLock[automation.id] != null && this.stateLock[automation.id].trigger != null && this.stateLock[automation.id].trigger[automation.trigger.groups[i].blocks[j].id + '#' + automation.trigger.groups[i].blocks[j].letters] == true)
+									{
+										return true;
+									}
+								}
+							}
+						}
+					}
+				}
+	
+				return false;
+			};
+
 			if(this.ready)
 			{
 				var changed = false;
@@ -229,7 +255,10 @@ module.exports = class Automation
 							}
 						}
 
-						this.checkTrigger(this.automation[i], service, state);
+						if(!HAS_LOCK(this.automation[i]))
+						{
+							this.checkTrigger(this.automation[i], service, state);
+						}
 					}
 				}
 
@@ -243,7 +272,7 @@ module.exports = class Automation
 		});
 	}
 
-	async checkTrigger(automation, service)
+	async checkTrigger(automation, service, state)
 	{
 		const TRIGGER = (blocks, logic) => {
 
@@ -253,9 +282,9 @@ module.exports = class Automation
 
 				for(const i in blocks)
 				{
-					promiseArray.push(new Promise((callback) => this._getState(automation, blocks[i]).then((state) => callback({ block : blocks[i], state : state || {} }))));
+					promiseArray.push(new Promise((callback) => (blocks[i].id != service.id || blocks[i].letters != service.letters ? this._getState(automation, blocks[i]).then((state) => callback({ block : blocks[i], state : state || {} })) : callback({ block : blocks[i], state }))));
 				}
-				
+
 				Promise.all(promiseArray).then((result) => {
 
 					if(logic == 'AND' && AND(result))
@@ -365,32 +394,6 @@ module.exports = class Automation
 			return success;
 		};
 
-		const HAS_LOCK = () => {
-
-			if(automation.trigger != null && automation.trigger.groups != null)
-			{
-				for(const i in automation.trigger.groups)
-				{
-					if(automation.trigger.groups[i].blocks != null)
-					{
-						for(const j in automation.trigger.groups[i].blocks)
-						{
-							if(automation.trigger.groups[i].blocks[j].options != null
-							&& automation.trigger.groups[i].blocks[j].options.stateLock == true)
-							{
-								if(this.stateLock[automation.id] != null && this.stateLock[automation.id].trigger != null && this.stateLock[automation.id].trigger[service.id + '#' + service.letters] == true)
-								{
-									return true;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			return false;
-		};
-
 		var promiseArray = [];
 
 		if(automation.trigger != null && automation.trigger.groups != null)
@@ -412,12 +415,9 @@ module.exports = class Automation
 				{
 					if((automation.options != null && automation.options.stateLock == false) || this.stateLock[automation.id] == null || this.stateLock[automation.id].result != true)
 					{
-						if(!HAS_LOCK())
-						{
-							this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
+						this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
-							this.executeResult(automation, service);
-						}
+						this.executeResult(automation, service);
 					}
 				}
 			}
@@ -646,24 +646,24 @@ module.exports = class Automation
 		if(block.id != null && block.letters != null)
 		{
 			if(block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null)
-		{
-			var theRequest = {
-				url : 'http://' + (block.bridge || '127.0.0.1') + ':' + this.manager.RouteManager.getPort(block.plugin) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
-				timeout : 10000
-			};
+			{
+				var theRequest = {
+					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + this.manager.RouteManager.getPort(block.plugin) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+					timeout : 10000
+				};
 
-			try
-			{
-				state = await this.fetchRequest(theRequest, automation.name, block);
+				try
+				{
+					state = await this.fetchRequest(theRequest, automation.name, block);
+				}
+				catch(e)
+				{
+					this.logger.log('error', 'automation', 'Automation', 'Request %json_parse_error%!', e);
+				}
 			}
-			catch(e)
+			else
 			{
-				this.logger.log('error', 'automation', 'Automation', 'Request %json_parse_error%!', e);
-			}
-		}
-		else
-		{
-			state = this.platform.readAccessoryService(block.id, block.letters, true);	
+				state = this.platform.readAccessoryService(block.id, block.letters, true);	
 			}
 		}
 
