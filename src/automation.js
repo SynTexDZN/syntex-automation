@@ -172,7 +172,7 @@ module.exports = class Automation
 				{
 					if(this.automation[i].active && INCLUDES(this.automation[i], service.id, service.letters))
 					{
-						if(this.stateLock[this.automation[i].id] != null && this.stateLock[this.automation[i].id].trigger != null && this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] != null)
+						if(this.stateLock[this.automation[i].id] != null && this.stateLock[this.automation[i].id].trigger != null && this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] == true)
 						{
 							for(const j in this.automation[i].trigger.groups)
 							{
