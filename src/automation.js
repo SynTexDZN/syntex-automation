@@ -311,6 +311,27 @@ module.exports = class Automation
 				}
 			}
 
+			if(block.time != null && block.time.begin != null && block.time.end != null)
+			{
+				var now = new Date(), begin = new Date(), end = new Date();
+
+				begin.setHours(block.time.begin.split(':')[0]);
+				begin.setMinutes(block.time.begin.split(':')[1]);
+				begin.setSeconds(0);
+				begin.setMilliseconds(0);
+				
+				end.setHours(block.time.end.split(':')[0]);
+				end.setMinutes(block.time.end.split(':')[1]);
+				end.setSeconds(0);
+				end.setMilliseconds(0);
+
+				if(now.getTime() > begin.getTime()
+				&& now.getTime() < end.getTime())
+				{
+					success = true;
+				}
+			}
+
 			return success;
 		};
 
@@ -622,7 +643,9 @@ module.exports = class Automation
 	{
 		var state = null;
 
-		if(this.manager.pluginName != block.plugin && block.plugin != null && this.manager.RouteManager.getPort(block.plugin) != null)
+		if(block.id != null && block.letters != null)
+		{
+			if(block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null)
 		{
 			var theRequest = {
 				url : 'http://' + (block.bridge || '127.0.0.1') + ':' + this.manager.RouteManager.getPort(block.plugin) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
@@ -641,6 +664,7 @@ module.exports = class Automation
 		else
 		{
 			state = this.platform.readAccessoryService(block.id, block.letters, true);	
+			}
 		}
 
 		return state;
