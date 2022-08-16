@@ -206,49 +206,24 @@ module.exports = class Automation
 								{
 									if(this.automation[i].trigger.groups[j].blocks[k].id == service.id && this.automation[i].trigger.groups[j].blocks[k].letters == service.letters)
 									{
-										if(this.automation[i].trigger.groups[j].blocks[k].operation == '>')
+										if(!this._getOutput(this.automation[i].trigger.groups[j].blocks[k], state))
 										{
-											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value < this.automation[i].trigger.groups[j].blocks[k].state.value
-											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue < this.automation[i].trigger.groups[j].blocks[k].state.hue
-											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation < this.automation[i].trigger.groups[j].blocks[k].state.saturation
-											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness < this.automation[i].trigger.groups[j].blocks[k].state.brightness)
+											this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
+
+											if(this.automation[i].trigger.groups[j].blocks[k].operation == '<')
 											{
-												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
-
-												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
-											
-												changed = true;
-											}
-										}
-
-										if(this.automation[i].trigger.groups[j].blocks[k].operation == '<')
-										{
-											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value > this.automation[i].trigger.groups[j].blocks[k].state.value
-											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue > this.automation[i].trigger.groups[j].blocks[k].state.hue
-											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation > this.automation[i].trigger.groups[j].blocks[k].state.saturation
-											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness > this.automation[i].trigger.groups[j].blocks[k].state.brightness)
-											{
-												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
-
 												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_greater% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
-											
-												changed = true;
 											}
-										}
-
-										if(this.automation[i].trigger.groups[j].blocks[k].operation == '=')
-										{
-											if(state.value != null && this.automation[i].trigger.groups[j].blocks[k].state.value != null && state.value != this.automation[i].trigger.groups[j].blocks[k].state.value
-											|| state.hue != null && this.automation[i].trigger.groups[j].blocks[k].state.hue != null && state.hue != this.automation[i].trigger.groups[j].blocks[k].state.hue
-											|| state.saturation != null && this.automation[i].trigger.groups[j].blocks[k].state.saturation != null && state.saturation != this.automation[i].trigger.groups[j].blocks[k].state.saturation
-											|| state.brightness != null && this.automation[i].trigger.groups[j].blocks[k].state.brightness != null && state.brightness != this.automation[i].trigger.groups[j].blocks[k].state.brightness)
+											else if(this.automation[i].trigger.groups[j].blocks[k].operation == '>')
 											{
-												this.stateLock[this.automation[i].id].trigger[service.id + '#' + service.letters] = false;
-
-												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
-											
-												changed = true;
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
 											}
+											else
+											{
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + service.id + '#' + service.letters);
+											}
+
+											changed = true;
 										}
 									}
 								}
@@ -303,74 +278,13 @@ module.exports = class Automation
 			});
 		};
 
-		const LOGIC = (block, state) => {
-
-			var success = false;
-
-			if(block.operation == '>')
-			{
-				if(state.value != null && block.state.value != null && state.value > block.state.value
-				|| state.hue != null && block.state.hue != null && state.hue > block.state.hue
-				|| state.saturation != null && block.state.saturation != null && state.saturation > block.state.saturation
-				|| state.brightness != null && block.state.brightness != null && state.brightness > block.state.brightness)
-				{
-					success = true;
-				}
-			}
-
-			if(block.operation == '<')
-			{
-				if(state.value != null && block.state.value != null && state.value < block.state.value
-				|| state.hue != null && block.state.hue != null && state.hue < block.state.hue
-				|| state.saturation != null && block.state.saturation != null && state.saturation < block.state.saturation
-				|| state.brightness != null && block.state.brightness != null && state.brightness < block.state.brightness)
-				{
-					success = true;
-				}
-			}
-
-			if(block.operation == '=')
-			{
-				if(state.value == null || block.state.value == null || state.value == block.state.value
-				&& (state.hue == null || block.state.hue == null || state.hue == block.state.hue)
-				&& (state.saturation == null || block.state.saturation == null || state.saturation == block.state.saturation)
-				&& (state.brightness == null || block.state.brightness == null || state.brightness == block.state.brightness))
-				{
-					success = true;
-				}
-			}
-
-			if(block.time != null && block.time.begin != null && block.time.end != null)
-			{
-				var now = new Date(), begin = new Date(), end = new Date();
-
-				begin.setHours(block.time.begin.split(':')[0]);
-				begin.setMinutes(block.time.begin.split(':')[1]);
-				begin.setSeconds(0);
-				begin.setMilliseconds(0);
-				
-				end.setHours(block.time.end.split(':')[0]);
-				end.setMinutes(block.time.end.split(':')[1]);
-				end.setSeconds(0);
-				end.setMilliseconds(0);
-
-				if(now.getTime() > begin.getTime()
-				&& now.getTime() < end.getTime())
-				{
-					success = true;
-				}
-			}
-
-			return success;
-		};
-
 		const AND = (blocks) => {
 
 			var success = true;
 
 			for(const i in blocks)
 			{
-				if(!LOGIC(blocks[i].block, blocks[i].state))
+				if(!this._getOutput(blocks[i].block, blocks[i].state))
 				{
 					success = false;
 				}
@@ -385,7 +299,7 @@ module.exports = class Automation
 
 			for(const i in blocks)
 			{
-				if(LOGIC(blocks[i].block, blocks[i].state))
+				if(this._getOutput(blocks[i].block, blocks[i].state))
 				{
 					success = true;
 				}
@@ -668,5 +582,67 @@ module.exports = class Automation
 		}
 
 		return state;
+	}
+
+	_getOutput(block, state)
+	{
+		if(block.time != null && block.time.begin != null && block.time.begin.includes(':') && block.time.end != null && block.time.end.includes(':'))
+		{
+			var now = new Date(), begin = new Date(), end = new Date();
+
+			begin.setHours(block.time.begin.split(':')[0]);
+			begin.setMinutes(block.time.begin.split(':')[1]);
+			begin.setSeconds(0);
+			begin.setMilliseconds(0);
+			
+			end.setHours(block.time.end.split(':')[0]);
+			end.setMinutes(block.time.end.split(':')[1]);
+			end.setSeconds(0);
+			end.setMilliseconds(0);
+
+			if(now.getTime() > block.time.begin.getTime()
+			&& now.getTime() < block.time.end.getTime())
+			{
+				return true;
+			}
+		}
+
+		if(block.operation != null && block.id != null && block.letters != null && block.state != null)
+		{
+			if(block.operation == '>')
+			{
+				if((state.value == null || block.state.value == null || state.value > block.state.value)
+				&& (state.hue == null || block.state.hue == null || state.hue > block.state.hue)
+				&& (state.saturation == null || block.state.saturation == null || state.saturation > block.state.saturation)
+				&& (state.brightness == null || block.state.brightness == null || state.brightness > block.state.brightness))
+				{
+					return true;
+				}
+			}
+
+			if(block.operation == '<')
+			{
+				if((state.value == null || block.state.value == null || state.value < block.state.value)
+				&& (state.hue == null || block.state.hue == null || state.hue < block.state.hue)
+				&& (state.saturation == null || block.state.saturation == null || state.saturation < block.state.saturation)
+				&& (state.brightness == null || block.state.brightness == null || state.brightness < block.state.brightness))
+				{
+					return true;
+				}
+			}
+
+			if(block.operation == '=')
+			{
+				if((state.value == null || block.state.value == null || state.value == block.state.value)
+				&& (state.hue == null || block.state.hue == null || state.hue == block.state.hue)
+				&& (state.saturation == null || block.state.saturation == null || state.saturation == block.state.saturation)
+				&& (state.brightness == null || block.state.brightness == null || state.brightness == block.state.brightness))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }
