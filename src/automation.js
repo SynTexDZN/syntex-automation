@@ -600,8 +600,8 @@ module.exports = class Automation
 			end.setSeconds(0);
 			end.setMilliseconds(0);
 
-			if(now.getTime() > block.time.begin.getTime()
-			&& now.getTime() < block.time.end.getTime())
+			if(now.getTime() > begin.getTime()
+			&& now.getTime() < end.getTime())
 			{
 				return true;
 			}
