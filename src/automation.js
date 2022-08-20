@@ -42,11 +42,18 @@ module.exports = class Automation
 				{
 					if(blocks[j].time != null)
 					{
-						if(this.stateLock[this.automation[i].id] != null
-						&& this.stateLock[this.automation[i].id].trigger != null
-						&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
+						if(this._getOutput(blocks[j]))
 						{
-							if(!this._getOutput(blocks[j]))
+							if(!this._isLocked(this.automation[i]))
+							{
+								this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+							}
+						}
+						else
+						{
+							if(this.stateLock[this.automation[i].id] != null
+							&& this.stateLock[this.automation[i].id].trigger != null
+							&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
 							{
 								this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
 
@@ -193,27 +200,6 @@ module.exports = class Automation
 				return false;
 			};
 
-			const HAS_LOCK = (automation) => {
-
-				var blocks = this._getBlocks(automation.id);
-
-				for(const i in blocks)
-				{
-					if(blocks[i].options != null
-					&& blocks[i].options.stateLock == true)
-					{
-						if(this.stateLock[automation.id] != null
-						&& this.stateLock[automation.id].trigger != null
-						&& this.stateLock[automation.id].trigger[blocks[i].blockID] == true)
-						{
-							return true;
-						}
-					}
-				}
-	
-				return false;
-			};
-
 			if(this.ready)
 			{
 				var changed = false;
@@ -256,7 +242,7 @@ module.exports = class Automation
 							}
 						}
 
-						if(!HAS_LOCK(this.automation[i]))
+						if(!this._isLocked(this.automation[i]))
 						{
 							this.checkTrigger(this.automation[i], service, state);
 						}
@@ -694,5 +680,26 @@ module.exports = class Automation
 		}
 
 		return blocks;
+	}
+
+	_isLocked(automation)
+	{
+		var blocks = this._getBlocks(automation.id);
+
+		for(const i in blocks)
+		{
+			if(blocks[i].options != null
+			&& blocks[i].options.stateLock == true)
+			{
+				if(this.stateLock[automation.id] != null
+				&& this.stateLock[automation.id].trigger != null
+				&& this.stateLock[automation.id].trigger[blocks[i].blockID] == true)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }
