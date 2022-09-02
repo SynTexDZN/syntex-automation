@@ -28,7 +28,7 @@ module.exports = class Automation
 				this.parseAutomation(); // TODO: Soon Obsolete
 
 				this.loadLock().then((lockSuccess) => {
-					
+
 					if(lockSuccess)
 					{
 						this.timeInterval = setInterval(() => this.loadLock().then(() => {
@@ -99,7 +99,8 @@ module.exports = class Automation
 				}
 
 				resolve(data != null);
-			});
+
+			}).catch(() => resolve(false));
 		});
 	}
 
@@ -107,7 +108,7 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 
-			this.files.readFile('automation/automation-lock.json').then((data, error) => {
+			this.files.readFile('automation/automation-lock.json').then((data) => {
 
 				if(data != null)
 				{
@@ -115,8 +116,9 @@ module.exports = class Automation
 					this.stateLock = data.stateLock || {};
 				}
 
-				resolve(error);
-			});
+				resolve(true);
+
+			}).catch(() => resolve(false));
 		});
 	}
 

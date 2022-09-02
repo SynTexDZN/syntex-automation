@@ -21,7 +21,8 @@ module.exports = class RouteManager
 						}
 					}
 				}
-			});
+				
+			}).catch(() => {});
 		}
 	}
 
