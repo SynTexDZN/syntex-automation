@@ -5,6 +5,8 @@ module.exports = class Automation
 	constructor(platform, manager)
 	{
 		this.ready = false;
+
+		this.automation = [];
 		
 		this.timeLock = {};
 		this.stateLock = {};
@@ -19,59 +21,64 @@ module.exports = class Automation
 
 		this.manager = manager;
 		
-		this.files.readFile('automation/automation-lock.json').then((data) => {
-
-			if(data != null)
+		this.loadAutomation().then((automationSuccess) => {
+			
+			if(automationSuccess)
 			{
-				this.timeLock = data.timeLock || {};
-				this.stateLock = data.stateLock || {};
-			}
+				this.parseAutomation(); // TODO: Soon Obsolete
 
-			this.loadAutomation();
-		});
-		
-		this.timeInterval = setInterval(() => {
-
-			var changed = false;
-
-			for(const i in this.automation)
-			{
-				var blocks = this._getBlocks(this.automation[i].id);
-
-				for(const j in blocks)
-				{
-					if(blocks[j].time != null)
+				this.loadLock().then((lockSuccess) => {
+					
+					if(lockSuccess)
 					{
-						if(this._getOutput(blocks[j]))
-						{
-							if(!this._isLocked(this.automation[i]))
+						this.timeInterval = setInterval(() => this.loadLock().then(() => {
+				
+							var changed = false;
+			
+							for(const i in this.automation)
 							{
-								this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+								var blocks = this._getBlocks(this.automation[i].id);
+			
+								for(const j in blocks)
+								{
+									if(blocks[j].time != null)
+									{
+										if(this._getOutput(blocks[j]))
+										{
+											if(!this._isLocked(this.automation[i]))
+											{
+												this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+											}
+										}
+										else
+										{
+											if(this.stateLock[this.automation[i].id] != null
+											&& this.stateLock[this.automation[i].id].trigger != null
+											&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
+											{
+												this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
+			
+												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
+			
+												changed = true;
+											}
+										}
+									}
+								}
 							}
-						}
-						else
-						{
-							if(this.stateLock[this.automation[i].id] != null
-							&& this.stateLock[this.automation[i].id].trigger != null
-							&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
+			
+							if(changed)
 							{
-								this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
-
-								this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-
-								changed = true;
+								this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 							}
-						}
+
+						}), 60000);
+
+						this.ready = true;
 					}
-				}
+				});
 			}
-
-			if(changed)
-			{
-				this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-			}
-
-		}, 60000);
+		});
 	}
 
 	loadAutomation()
@@ -84,22 +91,31 @@ module.exports = class Automation
 				{
 					this.automation = data;
 
-					resolve(true);
-
-					this.parseAutomation();
-
 					this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
 				}
 				else
 				{
-					this.automation = [];
-
-					resolve(false);
-
 					this.logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
 				}
 
-				this.ready = true;
+				resolve(data != null);
+			});
+		});
+	}
+
+	loadLock()
+	{
+		return new Promise((resolve) => {
+
+			this.files.readFile('automation/automation-lock.json').then((data, error) => {
+
+				if(data != null)
+				{
+					this.timeLock = data.timeLock || {};
+					this.stateLock = data.stateLock || {};
+				}
+
+				resolve(error);
 			});
 		});
 	}
