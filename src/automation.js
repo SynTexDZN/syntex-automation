@@ -11,6 +11,8 @@ module.exports = class Automation
 		this.timeLock = {};
 		this.stateLock = {};
 
+		this.sockets = {};
+
 		this.platform = platform;
 
 		this.logger = platform.logger;
@@ -31,7 +33,9 @@ module.exports = class Automation
 
 					if(lockSuccess)
 					{
-						this.timeInterval = setInterval(() => this.loadLock().then(() => {
+						this.initNetwork();
+
+						this.timeInterval = setInterval(() => {
 				
 							var changed = false;
 			
@@ -57,6 +61,8 @@ module.exports = class Automation
 											&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
 											{
 												this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
+
+												this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
 			
 												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
 			
@@ -72,7 +78,7 @@ module.exports = class Automation
 								this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 							}
 
-						}), 60000);
+						}, 60000);
 
 						this.ready = true;
 					}
@@ -120,6 +126,35 @@ module.exports = class Automation
 
 			}).catch(() => resolve(false));
 		});
+	}
+
+	initNetwork()
+	{
+		if(this.platform.WebServer != null)
+		{
+			this.platform.WebServer.addSocket('/automation', 'setLock', (ws, params) => {
+
+				if(params.id != null && params.lock != null)
+				{
+					if(params.blockID != null)
+					{
+						this.stateLock[params.id].trigger[params.blockID] = params.lock;
+					}
+					else
+					{
+						this.stateLock[params.id].result = params.lock;
+					}
+				}
+			});
+		}
+
+		for(const i in this.manager.RouteManager.plugins)
+		{
+			if(this.manager.RouteManager.plugins[i].port != this.platform.port)
+			{
+				this.sockets[this.manager.RouteManager.plugins[i].port] = this.platform.WebServer.connectSocket('ws://localhost:' + this.manager.RouteManager.plugins[i].port + '/automation', () => {});
+			}
+		}
 	}
 
 	parseAutomation()
@@ -240,6 +275,8 @@ module.exports = class Automation
 									if(!this._getOutput(blocks[j], state))
 									{
 										this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
+
+										this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
 
 										if(blocks[j].operation == '<')
 										{
@@ -368,6 +405,8 @@ module.exports = class Automation
 			else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
 			{
 				this.stateLock[automation.id].result = false;
+
+				this._updateSockets(false, automation.id);
 
 				this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id);
 			}
@@ -558,6 +597,8 @@ module.exports = class Automation
 
 					this.stateLock[automation.id].trigger[i + '' + j] = true;
 
+					this._updateSockets(true, automation.id, i + '' + j);
+
 					changed = true;
 				}
 			}
@@ -571,6 +612,8 @@ module.exports = class Automation
 			}
 
 			this.stateLock[automation.id].result = true;
+
+			this._updateSockets(true, automation.id);
 
 			changed = true;
 		}
@@ -719,5 +762,20 @@ module.exports = class Automation
 		}
 
 		return false;
+	}
+
+	_updateSockets(lock, id, blockID)
+	{
+		var params = { id, lock };
+
+		if(blockID != null)
+		{
+			params.blockID = blockID;
+		}
+
+		for(const i in this.sockets)
+		{
+			this.sockets[i].send(JSON.stringify({ line : 'setLock', params }))
+		}
 	}
 }
