@@ -139,6 +139,8 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 
+			this.logger.log('warn', 'bridge', 'Bridge', this.platform.WebServer != null);
+
 			if(this.platform.WebServer != null)
 			{
 				this.platform.WebServer.addSocket('/automation', 'setLock', (ws, params) => {
@@ -181,7 +183,7 @@ module.exports = class Automation
 							{
 								socketConnected(response.connected);
 							}
-							
+
 						}, true);
 
 						if(socket != null)
