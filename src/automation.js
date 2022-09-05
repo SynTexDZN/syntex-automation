@@ -145,8 +145,18 @@ module.exports = class Automation
 
 					if(params.id != null && params.lock != null)
 					{
+						if(this.stateLock[params.id] == null)
+						{
+							this.stateLock[params.id] = {};
+						}
+						
 						if(params.blockID != null)
 						{
+							if(this.stateLock[params.id].trigger == null)
+							{
+								this.stateLock[params.id].trigger = {};
+							}
+							
 							this.stateLock[params.id].trigger[params.blockID] = params.lock;
 						}
 						else
@@ -171,7 +181,8 @@ module.exports = class Automation
 							{
 								socketConnected(response.connected);
 							}
-						});
+							
+						}, true);
 
 						if(socket != null)
 						{
