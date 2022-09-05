@@ -177,7 +177,7 @@ module.exports = class Automation
 				{
 					promiseArray.push(new Promise((socketConnected) => {
 
-						var socket = this.platform.WebServer.connectSocket('ws://localhost:' + this.manager.RouteManager.plugins[i].port + '/automation', (response) => {
+						var socket = this.platform.WebServer.connectSocket('ws://127.0.0.1:' + this.manager.RouteManager.plugins[i].port + '/automation', (response) => {
 
 							if(response.connected != null)
 							{
