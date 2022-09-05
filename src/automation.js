@@ -80,6 +80,8 @@ module.exports = class Automation
 
 						}, 60000);
 
+						this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
+
 						this.ready = true;
 					}
 				});
@@ -96,17 +98,16 @@ module.exports = class Automation
 				if(data != null)
 				{
 					this.automation = data;
-
-					this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
-				}
-				else
-				{
-					this.logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
 				}
 
 				resolve(data != null);
 
-			}).catch(() => resolve(false));
+			}).catch(() => {
+				
+				this.logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
+
+				resolve(false);
+			});
 		});
 	}
 
@@ -124,7 +125,12 @@ module.exports = class Automation
 
 				resolve(true);
 
-			}).catch(() => resolve(false));
+			}).catch(() => {
+				
+				this.logger.log('warn', 'automation', 'Automation', '%automation_load_error%!');
+
+				resolve(false);
+			});
 		});
 	}
 
