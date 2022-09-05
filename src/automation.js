@@ -33,56 +33,57 @@ module.exports = class Automation
 
 					if(lockSuccess)
 					{
-						this.initNetwork();
+						this.initNetwork().then(() => {
 
-						this.timeInterval = setInterval(() => {
+							this.timeInterval = setInterval(() => {
 				
-							var changed = false;
-			
-							for(const i in this.automation)
-							{
-								var blocks = this._getBlocks(this.automation[i].id);
-			
-								for(const j in blocks)
+								var changed = false;
+				
+								for(const i in this.automation)
 								{
-									if(blocks[j].time != null)
+									var blocks = this._getBlocks(this.automation[i].id);
+				
+									for(const j in blocks)
 									{
-										if(this._getOutput(blocks[j]))
+										if(blocks[j].time != null)
 										{
-											if(!this._isLocked(this.automation[i]))
+											if(this._getOutput(blocks[j]))
 											{
-												this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+												if(!this._isLocked(this.automation[i]))
+												{
+													this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+												}
 											}
-										}
-										else
-										{
-											if(this.stateLock[this.automation[i].id] != null
-											&& this.stateLock[this.automation[i].id].trigger != null
-											&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
+											else
 											{
-												this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
-
-												this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
-			
-												this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-			
-												changed = true;
+												if(this.stateLock[this.automation[i].id] != null
+												&& this.stateLock[this.automation[i].id].trigger != null
+												&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
+												{
+													this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
+	
+													this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
+				
+													this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
+				
+													changed = true;
+												}
 											}
 										}
 									}
 								}
-							}
-			
-							if(changed)
-							{
-								this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-							}
-
-						}, 60000);
-
-						this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
-
-						this.ready = true;
+				
+								if(changed)
+								{
+									this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+								}
+	
+							}, 60000);
+	
+							this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
+	
+							this.ready = true;
+						});
 					}
 				});
 			}
@@ -136,31 +137,52 @@ module.exports = class Automation
 
 	initNetwork()
 	{
-		if(this.platform.WebServer != null)
-		{
-			this.platform.WebServer.addSocket('/automation', 'setLock', (ws, params) => {
+		return new Promise((resolve) => {
 
-				if(params.id != null && params.lock != null)
-				{
-					if(params.blockID != null)
-					{
-						this.stateLock[params.id].trigger[params.blockID] = params.lock;
-					}
-					else
-					{
-						this.stateLock[params.id].result = params.lock;
-					}
-				}
-			});
-		}
-
-		for(const i in this.manager.RouteManager.plugins)
-		{
-			if(this.manager.RouteManager.plugins[i].port != this.platform.port)
+			if(this.platform.WebServer != null)
 			{
-				this.sockets[this.manager.RouteManager.plugins[i].port] = this.platform.WebServer.connectSocket('ws://localhost:' + this.manager.RouteManager.plugins[i].port + '/automation', () => {});
+				this.platform.WebServer.addSocket('/automation', 'setLock', (ws, params) => {
+
+					if(params.id != null && params.lock != null)
+					{
+						if(params.blockID != null)
+						{
+							this.stateLock[params.id].trigger[params.blockID] = params.lock;
+						}
+						else
+						{
+							this.stateLock[params.id].result = params.lock;
+						}
+					}
+				});
 			}
-		}
+
+			var promiseArray = [];
+
+			for(const i in this.manager.RouteManager.plugins)
+			{
+				if(this.manager.RouteManager.plugins[i].port != this.platform.port)
+				{
+					promiseArray.push(new Promise((socketConnected) => {
+
+						var socket = this.platform.WebServer.connectSocket('ws://localhost:' + this.manager.RouteManager.plugins[i].port + '/automation', (response) => {
+
+							if(response.connected != null)
+							{
+								socketConnected(response.connected);
+							}
+						});
+
+						if(socket != null)
+						{
+							this.sockets[this.manager.RouteManager.plugins[i].port] = socket;
+						}
+					}));
+				}
+			}
+
+			Promise.all(promiseArray).then((result) => resolve(!result.includes(false)));
+		});
 	}
 
 	parseAutomation()
