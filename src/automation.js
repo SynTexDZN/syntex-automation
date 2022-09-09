@@ -11,14 +11,13 @@ module.exports = class Automation
 		this.timeLock = {};
 		this.stateLock = {};
 
-		this.sockets = {};
-
 		this.platform = platform;
 
 		this.logger = platform.logger;
 		this.files = platform.files;
 
 		this.ContextManager = platform.ContextManager;
+		this.EventManager = platform.EventManager;
 		this.TypeManager = platform.TypeManager;
 
 		this.manager = manager;
@@ -33,13 +32,15 @@ module.exports = class Automation
 
 					if(lockSuccess)
 					{
-						this.initNetwork().then(() => {
+						this.initNetwork();
 
-							this.timeInterval = setInterval(() => {
-				
-								var changed = false;
-				
-								for(const i in this.automation)
+						this.timeInterval = setInterval(() => {
+			
+							var changed = false;
+			
+							for(const i in this.automation)
+							{
+								if(!this._isLocked(this.automation[i]))
 								{
 									var blocks = this._getBlocks(this.automation[i].id);
 				
@@ -49,10 +50,7 @@ module.exports = class Automation
 										{
 											if(this._getOutput(blocks[j]))
 											{
-												if(!this._isLocked(this.automation[i]))
-												{
-													this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
-												}
+												this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
 											}
 											else
 											{
@@ -72,18 +70,18 @@ module.exports = class Automation
 										}
 									}
 								}
-				
-								if(changed)
-								{
-									this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-								}
-	
-							}, 60000);
-	
-							this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
-	
-							this.ready = true;
-						});
+							}
+			
+							if(changed)
+							{
+								this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+							}
+
+						}, 60000);
+
+						this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
+
+						this.ready = true;
 					}
 				});
 			}
@@ -137,62 +135,33 @@ module.exports = class Automation
 
 	initNetwork()
 	{
-		return new Promise((resolve) => {
+		if(this.EventManager != null)
+		{
+			this.EventManager.setInputStream('updateLock', { source : this, external : true }, (message) => {
 
-			if(this.platform.WebServer != null)
-			{
-				this.platform.WebServer.addSocket('/automation', 'setLock', (ws, params) => {
-
-					if(params.id != null && params.lock != null)
+				if(message.id != null && message.lock != null)
+				{
+					if(this.stateLock[message.id] == null)
 					{
-						if(this.stateLock[params.id] == null)
+						this.stateLock[message.id] = {};
+					}
+					
+					if(message.blockID != null)
+					{
+						if(this.stateLock[message.id].trigger == null)
 						{
-							this.stateLock[params.id] = {};
+							this.stateLock[message.id].trigger = {};
 						}
 						
-						if(params.blockID != null)
-						{
-							if(this.stateLock[params.id].trigger == null)
-							{
-								this.stateLock[params.id].trigger = {};
-							}
-							
-							this.stateLock[params.id].trigger[params.blockID] = params.lock;
-						}
-						else
-						{
-							this.stateLock[params.id].result = params.lock;
-						}
+						this.stateLock[message.id].trigger[message.blockID] = message.lock;
 					}
-				});
-			}
-
-			var promiseArray = [];
-
-			for(const i in this.manager.RouteManager.plugins)
-			{
-				if(this.manager.RouteManager.plugins[i].port != this.platform.port)
-				{
-					promiseArray.push(new Promise((socketConnected) => {
-
-						var socket = this.platform.WebServer.connectSocket('ws://127.0.0.1:' + this.manager.RouteManager.plugins[i].port + '/automation', (response) => {
-
-							if(response.connected != null)
-							{
-								socketConnected(response.connected);
-							}
-						});
-
-						if(socket != null)
-						{
-							this.sockets[this.manager.RouteManager.plugins[i].port] = socket;
-						}
-					}));
+					else
+					{
+						this.stateLock[message.id].result = message.lock;
+					}
 				}
-			}
-
-			Promise.all(promiseArray).then((result) => resolve(!result.includes(false)));
-		});
+			});
+		}
 	}
 
 	parseAutomation()
@@ -804,16 +773,16 @@ module.exports = class Automation
 
 	_updateSockets(lock, id, blockID)
 	{
-		var params = { id, lock };
-
-		if(blockID != null)
+		if(this.EventManager != null)
 		{
-			params.blockID = blockID;
-		}
+			var message = { id, lock };
 
-		for(const i in this.sockets)
-		{
-			this.sockets[i].send(JSON.stringify({ line : 'setLock', params }))
+			if(blockID != null)
+			{
+				message.blockID = blockID;
+			}
+
+			this.EventManager.setOutputStream('updateLock', { sender : this }, message);
 		}
 	}
 }
