@@ -526,10 +526,10 @@ module.exports = class Automation
 						state.value = 0;
 					}
 
-					if(result.plugin != null && this.manager.pluginName != result.plugin && this.manager.RouteManager.getPort(result.plugin) != null)
+					if(result.bridge != null && result.port != null)
 					{
 						let theRequest = {
-							url : 'http://' + (result.bridge || '127.0.0.1') + ':' + this.manager.RouteManager.getPort(result.plugin) + '/devices?id=' + result.id + '&type=' + this.TypeManager.letterToType(result.letters[0]) + '&counter=' + result.letters[1],
+							url : 'http://' + result.bridge + ':' + result.port + '/devices?id=' + result.id + '&type=' + this.TypeManager.letterToType(result.letters[0]) + '&counter=' + result.letters[1],
 							timeout : 10000
 						};
 
@@ -542,7 +542,7 @@ module.exports = class Automation
 					}
 					else
 					{
-						this.manager.setOutputStream('SynTexAutomation', { id : result.id, letters : result.letters }, state);
+						this.EventManager.setOutputStream('changeHandler', { receiver : { id : result.id, letters : result.letters } }, state);
 					}
 
 					success = true;
@@ -639,10 +639,10 @@ module.exports = class Automation
 
 		if(block.id != null && block.letters != null)
 		{
-			if(block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null)
+			if((block.bridge != null && block.port != null) || (block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null))
 			{
 				var theRequest = {
-					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + this.manager.RouteManager.getPort(block.plugin) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + (block.port || this.manager.RouteManager.getPort(block.plugin)) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
 					timeout : 10000
 				};
 
