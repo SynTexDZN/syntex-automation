@@ -40,34 +40,16 @@ module.exports = class Automation
 			
 							for(const i in this.automation)
 							{
-								if(!this._isLocked(this.automation[i]))
+								if(this.automation[i].active && this._includesTime(this.automation[i]))
 								{
-									var blocks = this._getBlocks(this.automation[i].id);
-				
-									for(const j in blocks)
+									if(this._checkLock(this.automation[i]))
 									{
-										if(blocks[j].time != null)
-										{
-											if(this._getOutput(blocks[j]))
-											{
-												this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
-											}
-											else
-											{
-												if(this.stateLock[this.automation[i].id] != null
-												&& this.stateLock[this.automation[i].id].trigger != null
-												&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
-												{
-													this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
-	
-													this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
-				
-													this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-				
-													changed = true;
-												}
-											}
-										}
+										changed = true;
+									}
+									
+									if(!this._isLocked(this.automation[i]))
+									{
+										this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
 									}
 								}
 							}
@@ -245,63 +227,17 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 
-			const INCLUDES = (automation, id, letters) => {
-
-				var blocks = this._getBlocks(automation.id);
-
-				for(const i in blocks)
-				{
-					if(blocks[i].id == id && blocks[i].letters == letters)
-					{
-						return true;
-					}
-				}
-	
-				return false;
-			};
-
 			if(this.ready)
 			{
 				var changed = false;
 
 				for(const i in this.automation)
 				{
-					if(this.automation[i].active && INCLUDES(this.automation[i], service.id, service.letters))
+					if(this.automation[i].active && this._includesBlock(this.automation[i], service.id, service.letters))
 					{
-						var blocks = this._getBlocks(this.automation[i].id);
-
-						for(const j in blocks)
+						if(this._checkLock(this.automation[i], service, state))
 						{
-							if(blocks[j].id == service.id
-							&& blocks[j].letters == service.letters)
-							{
-								if(this.stateLock[this.automation[i].id] != null
-								&& this.stateLock[this.automation[i].id].trigger != null
-								&& this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] == true)
-								{
-									if(!this._getOutput(blocks[j], state))
-									{
-										this.stateLock[this.automation[i].id].trigger[blocks[j].blockID] = false;
-
-										this._updateSockets(false, this.automation[i].id, blocks[j].blockID);
-
-										if(blocks[j].operation == '<')
-										{
-											this.logger.debug('Automation [' + this.automation[i].name + '] %automation_greater% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-										}
-										else if(blocks[j].operation == '>')
-										{
-											this.logger.debug('Automation [' + this.automation[i].name + '] %automation_lower% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-										}
-										else
-										{
-											this.logger.debug('Automation [' + this.automation[i].name + '] %automation_different% ' + this.automation[i].id + ' ' + blocks[j].blockID);
-										}
-
-										changed = true;
-									}
-								}
-							}
+							changed = true;
 						}
 
 						if(!this._isLocked(this.automation[i]))
@@ -784,5 +720,75 @@ module.exports = class Automation
 
 			this.EventManager.setOutputStream('updateLock', { sender : this }, message);
 		}
+	}
+
+	_includesBlock(automation, id, letters)
+	{
+		var blocks = this._getBlocks(automation.id);
+
+		for(const i in blocks)
+		{
+			if(blocks[i].id == id && blocks[i].letters == letters)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	_includesTime(automation)
+	{
+		var blocks = this._getBlocks(automation.id);
+
+		for(const i in blocks)
+		{
+			if(blocks[i].time != null)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	_checkLock(automation, service = {}, state = {})
+	{
+		var blocks = this._getBlocks(automation.id), changed = false;
+
+		for(const j in blocks)
+		{
+			if(this.stateLock[automation.id] != null
+			&& this.stateLock[automation.id].trigger != null
+			&& this.stateLock[automation.id].trigger[blocks[j].blockID] == true)
+			{
+				if((blocks[j].id == service.id && blocks[j].letters == service.letters) || blocks[j].time != null)
+				{
+					if(!this._getOutput(blocks[j], state))
+					{
+						this.stateLock[automation.id].trigger[blocks[j].blockID] = false;
+
+						this._updateSockets(false, automation.id, blocks[j].blockID);
+
+						if(blocks[j].operation == '<')
+						{
+							this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + blocks[j].blockID);
+						}
+						else if(blocks[j].operation == '>')
+						{
+							this.logger.debug('Automation [' + automation.name + '] %automation_lower% ' + automation.id + ' ' + blocks[j].blockID);
+						}
+						else
+						{
+							this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + blocks[j].blockID);
+						}
+
+						changed = true;
+					}
+				}
+			}
+		}
+
+		return changed;
 	}
 }
