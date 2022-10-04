@@ -143,6 +143,17 @@ module.exports = class Automation
 					}
 				}
 			});
+
+			this.EventManager.setInputStream('updateAutomation', { source : this, external : true }, () => {
+
+				this.loadAutomation().then((success) => {
+
+					if(success)
+					{
+						this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
+					}
+				});
+			});
 		}
 	}
 
