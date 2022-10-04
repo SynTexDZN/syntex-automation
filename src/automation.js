@@ -602,19 +602,42 @@ module.exports = class Automation
 
 	_getOutput(block, state)
 	{
-		if(block.time != null && block.time.begin != null && block.time.begin.includes(':') && block.time.end != null && block.time.end.includes(':'))
+		if(block.time != null && block.time.includes(':') && block.operation != null)
 		{
 			var now = new Date(), begin = new Date(), end = new Date();
 
-			begin.setHours(block.time.begin.split(':')[0]);
-			begin.setMinutes(block.time.begin.split(':')[1]);
+			begin.setMinutes(0);
 			begin.setSeconds(0);
 			begin.setMilliseconds(0);
 			
-			end.setHours(block.time.end.split(':')[0]);
-			end.setMinutes(block.time.end.split(':')[1]);
+			end.setMinutes(0);
 			end.setSeconds(0);
 			end.setMilliseconds(0);
+
+			if(block.operation == '>')
+			{
+				begin.setHours(block.time.split(':')[0]);
+				begin.setMinutes(block.time.split(':')[1]);
+
+				end.setHours(24);
+			}
+
+			if(block.operation == '<')
+			{
+				begin.setHours(0);
+
+				end.setHours(block.time.split(':')[0]);
+				end.setMinutes(block.time.split(':')[1]);
+			}
+
+			if(block.operation == '=')
+			{
+				begin.setHours(block.time.split(':')[0]);
+				begin.setMinutes(block.time.split(':')[1]);
+
+				end.setHours(block.time.split(':')[0]);
+				end.setMinutes(parseInt(block.time.split(':')[1]) + 1);
+			}
 
 			if(now.getTime() > begin.getTime()
 			&& now.getTime() < end.getTime())
@@ -623,7 +646,7 @@ module.exports = class Automation
 			}
 		}
 
-		if(block.operation != null && block.id != null && block.letters != null && block.state != null)
+		if(block.id != null && block.letters != null && block.state != null && block.operation != null)
 		{
 			if(block.operation == '>')
 			{
