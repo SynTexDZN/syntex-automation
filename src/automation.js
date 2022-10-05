@@ -26,8 +26,6 @@ module.exports = class Automation
 			
 			if(automationSuccess)
 			{
-				this.parseAutomation(); // TODO: Soon Obsolete
-
 				this.loadLock().then((lockSuccess) => {
 
 					if(lockSuccess)
@@ -154,83 +152,6 @@ module.exports = class Automation
 					}
 				});
 			});
-		}
-	}
-
-	parseAutomation()
-	{
-		try
-		{
-			for(const i in this.automation)
-			{
-				if(this.automation[i].trigger != null && this.automation[i].trigger.groups != null)
-				{
-					for(const j in this.automation[i].trigger.groups)
-					{
-						if(this.automation[i].trigger.groups[j].blocks != null)
-						{
-							for(const k in this.automation[i].trigger.groups[j].blocks)
-							{
-								if(this.automation[i].trigger.groups[j].blocks[k].state != null)
-								{
-									if(this.automation[i].trigger.groups[j].blocks[k].state.value != null)
-									{
-										this.automation[i].trigger.groups[j].blocks[k].state.value = JSON.parse(this.automation[i].trigger.groups[j].blocks[k].state.value);
-									}
-
-									if(this.automation[i].trigger.groups[j].blocks[k].state.hue != null)
-									{
-										this.automation[i].trigger.groups[j].blocks[k].state.hue = JSON.parse(this.automation[i].trigger.groups[j].blocks[k].state.hue);
-									}
-
-									if(this.automation[i].trigger.groups[j].blocks[k].state.saturation != null)
-									{
-										this.automation[i].trigger.groups[j].blocks[k].state.saturation = JSON.parse(this.automation[i].trigger.groups[j].blocks[k].state.saturation);
-									}
-
-									if(this.automation[i].trigger.groups[j].blocks[k].state.brightness != null)
-									{
-										this.automation[i].trigger.groups[j].blocks[k].state.brightness = JSON.parse(this.automation[i].trigger.groups[j].blocks[k].state.brightness);
-									}
-								}
-							}
-						}
-					}
-				}
-
-				if(this.automation[i].result != null)
-				{
-					for(const j in this.automation[i].result)
-					{
-						if(this.automation[i].result[j].state != null)
-						{
-							if(this.automation[i].result[j].state.value != null)
-							{
-								this.automation[i].result[j].state.value = JSON.parse(this.automation[i].result[j].state.value);
-							}
-
-							if(this.automation[i].result[j].state.hue != null)
-							{
-								this.automation[i].result[j].state.hue = JSON.parse(this.automation[i].result[j].state.hue);
-							}
-
-							if(this.automation[i].result[j].state.saturation != null)
-							{
-								this.automation[i].result[j].state.saturation = JSON.parse(this.automation[i].result[j].state.saturation);
-							}
-
-							if(this.automation[i].result[j].state.brightness != null)
-							{
-								this.automation[i].result[j].state.brightness = JSON.parse(this.automation[i].result[j].state.brightness);
-							}
-						}
-					}
-				}
-			}
-		}
-		catch(e)
-		{
-			this.logger.log('error', 'automation', 'Automation', 'Automation %json_parse_error%!', e);
 		}
 	}
 
