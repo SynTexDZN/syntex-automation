@@ -163,18 +163,18 @@ module.exports = class Automation
 			{
 				var changed = false;
 
-				for(const i in this.automation)
+				for(const automation of this.automation)
 				{
-					if(this.automation[i].active && this._includesBlock(this.automation[i], service.id, service.letters))
+					if(automation.active && this._includesBlock(automation, service.id, service.letters))
 					{
-						if(this._checkLock(this.automation[i], service, state))
+						if(this._checkLock(automation, service, state))
 						{
 							changed = true;
 						}
 
-						if(!this._isLocked(this.automation[i]))
+						if(!this._isLocked(automation))
 						{
-							this.checkTrigger(this.automation[i], service, state);
+							this.checkTrigger(automation, service, state);
 						}
 					}
 				}
@@ -197,9 +197,9 @@ module.exports = class Automation
 
 				var promiseArray = [];
 
-				for(const i in blocks)
+				for(const block of blocks)
 				{
-					promiseArray.push(new Promise((callback) => (blocks[i].id != service.id || blocks[i].letters != service.letters ? this._getState(automation, blocks[i]).then((state) => callback({ block : blocks[i], state : state || {} })) : callback({ block : blocks[i], state }))));
+					promiseArray.push(new Promise((callback) => (block.id != service.id || block.letters != service.letters ? this._getState(automation, block).then((state) => callback({ block : block, state : state || {} })) : callback({ block : block, state }))));
 				}
 
 				Promise.all(promiseArray).then((result) => {
@@ -224,9 +224,9 @@ module.exports = class Automation
 
 			var success = true;
 
-			for(const i in blocks)
+			for(const block of blocks)
 			{
-				if(!this._getOutput(blocks[i].block, blocks[i].state))
+				if(!this._getOutput(block.block, block.state))
 				{
 					success = false;
 				}
@@ -239,9 +239,9 @@ module.exports = class Automation
 
 			var success = false;
 
-			for(const i in blocks)
+			for(const block of blocks)
 			{
-				if(this._getOutput(blocks[i].block, blocks[i].state))
+				if(this._getOutput(block.block, block.state))
 				{
 					success = true;
 				}
@@ -254,11 +254,11 @@ module.exports = class Automation
 
 		if(automation.trigger != null && automation.trigger.groups != null)
 		{
-			for(const i in automation.trigger.groups)
+			for(const group of automation.trigger.groups)
 			{
-				if(automation.trigger.groups[i].blocks != null && automation.trigger.groups[i].logic != null)
+				if(group.blocks != null && group.logic != null)
 				{
-					promiseArray.push(TRIGGER(automation.trigger.groups[i].blocks, automation.trigger.groups[i].logic, service.id, service.letters));
+					promiseArray.push(TRIGGER(group.blocks, group.logic, service.id, service.letters));
 				}
 			}
 		}
@@ -366,38 +366,36 @@ module.exports = class Automation
 	{
 		var success = false;
 
-		for(const i in automation.result)
+		for(const block of automation.result)
 		{
-			var result = automation.result[i];
-
-			if(result.url != null)
+			if(block.url != null)
 			{
 				let theRequest = {
-					url : result.url,
+					url : block.url,
 					timeout : 10000
 				};
 
-				this.fetchRequest(theRequest, automation.name, result);
+				this.fetchRequest(theRequest, automation.name, block);
 
 				success = true;
 			}
 
-			if(result.id != null && result.letters != null && result.state != null && result.name != null)
+			if(block.id != null && block.letters != null && block.state != null && block.name != null)
 			{
-				var state = { ...result.state };
+				var state = { ...block.state };
 
-				if((state = this.TypeManager.validateUpdate(result.id, result.letters, state)) != null)
+				if((state = this.TypeManager.validateUpdate(block.id, block.letters, state)) != null)
 				{
-					if(this.TypeManager.letterToType(result.letters[0]) == 'statelessswitch')
+					if(this.TypeManager.letterToType(block.letters[0]) == 'statelessswitch')
 					{
 						state.event = state.value;
 						state.value = 0;
 					}
 
-					if(result.bridge != null && result.port != null)
+					if(block.bridge != null && block.port != null)
 					{
 						let theRequest = {
-							url : 'http://' + result.bridge + ':' + result.port + '/devices?id=' + result.id + '&type=' + this.TypeManager.letterToType(result.letters[0]) + '&counter=' + result.letters[1],
+							url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
 							timeout : 10000
 						};
 
@@ -406,18 +404,18 @@ module.exports = class Automation
 							theRequest.url += '&' + x + '=' + state[x];
 						}
 
-						this.fetchRequest(theRequest, automation.name, result);
+						this.fetchRequest(theRequest, automation.name, block);
 					}
 					else
 					{
-						this.EventManager.setOutputStream('changeHandler', { receiver : { id : result.id, letters : result.letters } }, state);
+						this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
 					}
 
 					success = true;
 				}
 				else
 				{
-					this.logger.log('error', result.id, result.letters, '[' + result.name + '] %update_error%! ( ' + result.id + ' )');
+					this.logger.log('error', block.id, block.letters, '[' + block.name + '] %update_error%! ( ' + block.id + ' )');
 				}
 			}
 		}
@@ -621,17 +619,17 @@ module.exports = class Automation
 	{
 		var blocks = [];
 
-		for(const i in this.automation)
+		for(const automation of this.automation)
 		{
-			if((id == null || this.automation[i].id == id) && this.automation[i].trigger != null && this.automation[i].trigger.groups != null)
+			if((id == null || automation.id == id) && automation.trigger != null && automation.trigger.groups != null)
 			{
-				for(const j in this.automation[i].trigger.groups)
+				for(const i in automation.trigger.groups)
 				{
-					if(this.automation[i].trigger.groups[j].blocks != null)
+					if(automation.trigger.groups[i].blocks != null)
 					{
-						for(const k in this.automation[i].trigger.groups[j].blocks)
+						for(const j in automation.trigger.groups[i].blocks)
 						{
-							blocks.push({ blockID : j + '' + k, ...this.automation[i].trigger.groups[j].blocks[k] });
+							blocks.push({ blockID : i + '' + j, ...automation.trigger.groups[i].blocks[j] });
 						}
 					}
 				}
@@ -645,14 +643,14 @@ module.exports = class Automation
 	{
 		var blocks = this._getBlocks(automation.id);
 
-		for(const i in blocks)
+		for(const block of blocks)
 		{
-			if(blocks[i].options != null
-			&& blocks[i].options.stateLock == true)
+			if(block.options != null
+			&& block.options.stateLock == true)
 			{
 				if(this.stateLock[automation.id] != null
 				&& this.stateLock[automation.id].trigger != null
-				&& this.stateLock[automation.id].trigger[blocks[i].blockID] == true)
+				&& this.stateLock[automation.id].trigger[block.blockID] == true)
 				{
 					return true;
 				}
@@ -681,9 +679,9 @@ module.exports = class Automation
 	{
 		var blocks = this._getBlocks(automation.id);
 
-		for(const i in blocks)
+		for(const block of blocks)
 		{
-			if(blocks[i].id == id && blocks[i].letters == letters)
+			if(block.id == id && block.letters == letters)
 			{
 				return true;
 			}
@@ -696,9 +694,9 @@ module.exports = class Automation
 	{
 		var blocks = this._getBlocks(automation.id);
 
-		for(const i in blocks)
+		for(const block of blocks)
 		{
-			if(blocks[i].time != null)
+			if(block.time != null)
 			{
 				return true;
 			}
@@ -711,31 +709,31 @@ module.exports = class Automation
 	{
 		var blocks = this._getBlocks(automation.id), changed = false;
 
-		for(const j in blocks)
+		for(const block of blocks)
 		{
 			if(this.stateLock[automation.id] != null
 			&& this.stateLock[automation.id].trigger != null
-			&& this.stateLock[automation.id].trigger[blocks[j].blockID] == true)
+			&& this.stateLock[automation.id].trigger[block.blockID] == true)
 			{
-				if((blocks[j].id == service.id && blocks[j].letters == service.letters) || blocks[j].time != null)
+				if((block.id == service.id && block.letters == service.letters) || block.time != null)
 				{
-					if(!this._getOutput(blocks[j], state))
+					if(!this._getOutput(block, state))
 					{
-						this.stateLock[automation.id].trigger[blocks[j].blockID] = false;
+						this.stateLock[automation.id].trigger[block.blockID] = false;
 
-						this._updateSockets(false, automation.id, blocks[j].blockID);
+						this._updateSockets(false, automation.id, block.blockID);
 
-						if(blocks[j].operation == '<')
+						if(block.operation == '<')
 						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + blocks[j].blockID);
+							this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + block.blockID);
 						}
-						else if(blocks[j].operation == '>')
+						else if(block.operation == '>')
 						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_lower% ' + automation.id + ' ' + blocks[j].blockID);
+							this.logger.debug('Automation [' + automation.name + '] %automation_lower% ' + automation.id + ' ' + block.blockID);
 						}
 						else
 						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + blocks[j].blockID);
+							this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + block.blockID);
 						}
 
 						changed = true;

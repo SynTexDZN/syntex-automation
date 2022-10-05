@@ -9,5 +9,5 @@ module.exports = class AutomationSystem
 
 		this.RouteManager = new RouteManager(platform.logger, platform.files, platform.api.user.storagePath());
 		this.LogikEngine = new LogikEngine(platform, this);
-    }
+	}
 }

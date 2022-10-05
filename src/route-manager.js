@@ -13,11 +13,11 @@ module.exports = class RouteManager
 
 				if(data != null && data.platforms != null)
 				{
-					for(const i in data.platforms)
+					for(const platform of data.platforms)
 					{
-						if(data.platforms[i].platform != 'SynTex' && data.platforms[i].baseDirectory != null && (data.platforms[i].port != null || (data.platforms[i].options != null && data.platforms[i].options.port != null)))
+						if(platform.platform != 'SynTex' && platform.baseDirectory != null && (platform.port != null || (platform.options != null && platform.options.port != null)))
 						{
-							this.plugins.push({ name : data.platforms[i].platform, port : (data.platforms[i].port || data.platforms[i].options.port) });
+							this.plugins.push({ name : platform.platform, port : (platform.port || platform.options.port) });
 						}
 					}
 				}
@@ -30,11 +30,11 @@ module.exports = class RouteManager
 	{
 		if(pluginName != null)
 		{
-			for(const i in this.plugins)
+			for(const plugin of this.plugins)
 			{
-				if(this.plugins[i].name == pluginName)
+				if(plugin.name == pluginName)
 				{
-					return this.plugins[i].port;
+					return plugin.port;
 				}
 			}
 		}
