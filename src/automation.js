@@ -38,18 +38,18 @@ module.exports = class Automation
 			
 							var changed = false;
 			
-							for(const i in this.automation)
+							for(const automation of this.automation)
 							{
-								if(this.automation[i].active && this._includesTime(this.automation[i]))
+								if(automation.active && this._includesTime(automation))
 								{
-									if(this._checkLock(this.automation[i]))
+									if(this._checkLock(automation))
 									{
 										changed = true;
 									}
 									
-									if(!this._isLocked(this.automation[i]))
+									if(!this._isLocked(automation))
 									{
-										this.checkTrigger(this.automation[i], { name : new Date().getHours() + ':' + new Date().getMinutes() }, {});
+										this.checkTrigger(automation, { name : ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2) }, {});
 									}
 								}
 							}
