@@ -267,14 +267,14 @@ module.exports = class Automation
 
 			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
 			{
-				if(this.timeLock[automation.id] == null || new Date().getTime() >= this.timeLock[automation.id])
+				if(automation.options == null
+				|| automation.options.timeLock == null
+				|| this.timeLock[automation.id] == null
+				|| new Date().getTime() >= this.timeLock[automation.id])
 				{
-					if((automation.options != null && automation.options.stateLock == false) || this.stateLock[automation.id] == null || this.stateLock[automation.id].result != true)
-					{
-						this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
+					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
 
-						this.executeResult(automation, service);
-					}
+					this.executeResult(automation, service);
 				}
 			}
 			else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
@@ -382,40 +382,45 @@ module.exports = class Automation
 
 			if(block.id != null && block.letters != null && block.state != null && block.name != null)
 			{
-				var state = { ...block.state };
-
-				if((state = this.TypeManager.validateUpdate(block.id, block.letters, state)) != null)
+				if((block.options != null && block.options.stateLock == false)
+				|| this.stateLock[automation.id] == null
+				|| this.stateLock[automation.id].result != true)
 				{
-					if(this.TypeManager.letterToType(block.letters[0]) == 'statelessswitch')
-					{
-						state.event = state.value;
-						state.value = 0;
-					}
+					var state = { ...block.state };
 
-					if(block.bridge != null && block.port != null)
+					if((state = this.TypeManager.validateUpdate(block.id, block.letters, state)) != null)
 					{
-						let theRequest = {
-							url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
-							timeout : 10000
-						};
-
-						for(const x in state)
+						if(this.TypeManager.letterToType(block.letters[0]) == 'statelessswitch')
 						{
-							theRequest.url += '&' + x + '=' + state[x];
+							state.event = state.value;
+							state.value = 0;
 						}
 
-						this.fetchRequest(theRequest, automation.name, block);
+						if(block.bridge != null && block.port != null)
+						{
+							let theRequest = {
+								url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+								timeout : 10000
+							};
+
+							for(const x in state)
+							{
+								theRequest.url += '&' + x + '=' + state[x];
+							}
+
+							this.fetchRequest(theRequest, automation.name, block);
+						}
+						else
+						{
+							this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
+						}
+
+						success = true;
 					}
 					else
 					{
-						this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
+						this.logger.log('error', block.id, block.letters, '[' + block.name + '] %update_error%! ( ' + block.id + ' )');
 					}
-
-					success = true;
-				}
-				else
-				{
-					this.logger.log('error', block.id, block.letters, '[' + block.name + '] %update_error%! ( ' + block.id + ' )');
 				}
 			}
 		}
@@ -477,7 +482,17 @@ module.exports = class Automation
 			}
 		}
 
-		if(automation.options == null || automation.options.stateLock == true)
+		var hasLock = false;
+
+		for(const block of automation.result)
+		{
+			if(block.options == null || block.options.stateLock != false)
+			{
+				hasLock = true;
+			}
+		}
+
+		if(hasLock)
 		{
 			if(this.stateLock[automation.id] == null)
 			{
