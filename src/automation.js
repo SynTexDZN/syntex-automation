@@ -362,12 +362,17 @@ module.exports = class Automation
 		}
 	}
 
-	executeResult(automation, trigger)
+	async executeResult(automation, trigger)
 	{
 		var success = false;
 
 		for(const block of automation.result)
 		{
+			if(block.time != null)
+			{
+				await new Promise((resolve) => setTimeout(() => resolve(), block.time));
+			}
+
 			if(block.url != null)
 			{
 				let theRequest = {
