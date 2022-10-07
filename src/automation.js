@@ -550,11 +550,13 @@ module.exports = class Automation
 		return state;
 	}
 
-	_getOutput(block, state)
+	_getOutput(block, state = {})
 	{
+		var now = new Date();
+
 		if(block.time != null && block.time.includes(':') && block.operation != null)
 		{
-			var now = new Date(), begin = new Date(), end = new Date();
+			var begin = new Date(), end = new Date();
 
 			begin.setMinutes(0);
 			begin.setSeconds(0);
@@ -596,7 +598,12 @@ module.exports = class Automation
 			}
 		}
 
-		if(block.id != null && block.letters != null && block.state != null && block.operation != null)
+		if(block.days != null && Array.isArray(block.days) && block.days.includes(now.getDay()))
+		{
+			return true;
+		}
+
+		if(block.id != null && block.letters != null && block.state != null && block.state instanceof Object && block.operation != null)
 		{
 			if(block.operation == '>')
 			{
@@ -716,7 +723,7 @@ module.exports = class Automation
 
 		for(const block of blocks)
 		{
-			if(block.time != null)
+			if(block.time != null || block.days != null)
 			{
 				return true;
 			}
@@ -735,7 +742,7 @@ module.exports = class Automation
 			&& this.stateLock[automation.id].trigger != null
 			&& this.stateLock[automation.id].trigger[block.blockID] == true)
 			{
-				if((block.id == service.id && block.letters == service.letters) || block.time != null)
+				if((block.id == service.id && block.letters == service.letters) || block.time != null || block.days != null)
 				{
 					if(!this._getOutput(block, state))
 					{
