@@ -368,9 +368,9 @@ module.exports = class Automation
 
 		for(const block of automation.result)
 		{
-			if(block.time != null)
+			if(block.delay != null)
 			{
-				await new Promise((resolve) => setTimeout(() => resolve(), block.time));
+				await new Promise((resolve) => setTimeout(() => resolve(), block.delay));
 			}
 
 			if(block.url != null)
@@ -723,7 +723,7 @@ module.exports = class Automation
 
 		for(const block of blocks)
 		{
-			if(block.time != null || block.days != null)
+			if(block.days != null || block.time != null)
 			{
 				return true;
 			}
@@ -742,7 +742,7 @@ module.exports = class Automation
 			&& this.stateLock[automation.id].trigger != null
 			&& this.stateLock[automation.id].trigger[block.blockID] == true)
 			{
-				if((block.id == service.id && block.letters == service.letters) || block.time != null || block.days != null)
+				if((block.id == service.id && block.letters == service.letters) || block.days != null || block.time != null)
 				{
 					if(!this._getOutput(block, state))
 					{
