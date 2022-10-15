@@ -380,9 +380,13 @@ module.exports = class Automation
 					timeout : 10000
 				};
 
-				this.fetchRequest(theRequest, automation.name, block);
+				this.fetchRequest(theRequest, automation.name, block).then((data) => {
 
-				success = true;
+					if(data != null)
+					{
+						success = true;
+					}
+				});
 			}
 
 			if(block.id != null && block.letters != null && block.state != null && block.name != null)
@@ -413,14 +417,20 @@ module.exports = class Automation
 								theRequest.url += '&' + x + '=' + state[x];
 							}
 
-							this.fetchRequest(theRequest, automation.name, block);
+							this.fetchRequest(theRequest, automation.name, block).then((data) => {
+
+								if(data != null)
+								{
+									success = true;
+								}
+							});
 						}
 						else
 						{
 							this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
+						
+							success = true;
 						}
-
-						success = true;
 					}
 					else
 					{
@@ -432,6 +442,8 @@ module.exports = class Automation
 
 		if(success)
 		{
+			this._automationLock(automation);
+
 			this._automationSuccess(automation, trigger);
 		}
 	}
@@ -449,11 +461,9 @@ module.exports = class Automation
 		});
 	}
 
-	_automationSuccess(automation, trigger)
+	_automationLock(automation)
 	{
 		var changed = false;
-
-		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
 		if(automation.options != null && automation.options.timeLock != null)
 		{
@@ -515,6 +525,11 @@ module.exports = class Automation
 		{
 			this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
 		}
+	}
+
+	_automationSuccess(automation, trigger)
+	{
+		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
 		this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 	}
