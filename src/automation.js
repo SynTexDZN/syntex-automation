@@ -364,7 +364,8 @@ module.exports = class Automation
 
 	async executeResult(automation, trigger)
 	{
-		var success = false;
+		var promiseArray = [], firstSuccess = false,
+			locked = this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true;
 
 		for(const block of automation.result)
 		{
@@ -373,79 +374,105 @@ module.exports = class Automation
 				await new Promise((resolve) => setTimeout(() => resolve(), block.delay));
 			}
 
-			if(block.url != null)
+			if((block.options != null && block.options.stateLock == false) || !locked)
 			{
-				let theRequest = {
-					url : block.url,
-					timeout : 10000
-				};
-
-				this.fetchRequest(theRequest, automation.name, block).then((data) => {
-
-					if(data != null)
-					{
-						success = true;
-					}
-				});
-			}
-
-			if(block.id != null && block.letters != null && block.state != null && block.name != null)
-			{
-				if((block.options != null && block.options.stateLock == false)
-				|| this.stateLock[automation.id] == null
-				|| this.stateLock[automation.id].result != true)
+				if(block.url != null)
 				{
-					var state = { ...block.state };
+					promiseArray.push(new Promise((resolve) => {
 
-					if((state = this.TypeManager.validateUpdate(block.id, block.letters, state)) != null)
-					{
-						if(this.TypeManager.letterToType(block.letters[0]) == 'statelessswitch')
-						{
-							state.event = state.value;
-							state.value = 0;
-						}
+						var theRequest = {
+							url : block.url,
+							timeout : 10000
+						};
+						
+						this.fetchRequest(theRequest, automation.name, block).then((data) => {
 
-						if(block.bridge != null && block.port != null)
-						{
-							let theRequest = {
-								url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
-								timeout : 10000
-							};
-
-							for(const x in state)
+							if(!firstSuccess)
 							{
-								theRequest.url += '&' + x + '=' + state[x];
+								firstSuccess = true;
+
+								this._automationLock(automation, block);
 							}
 
-							this.fetchRequest(theRequest, automation.name, block).then((data) => {
+							resolve(data != null);
+						});
+					}));
+				}
 
-								if(data != null)
+				if(block.id != null && block.letters != null && block.state != null && block.name != null)
+				{
+					promiseArray.push(new Promise((resolve) => {
+					
+						var state = { ...block.state };
+
+						if((state = this.TypeManager.validateUpdate(block.id, block.letters, state)) != null)
+						{
+							if(this.TypeManager.letterToType(block.letters[0]) == 'statelessswitch')
+							{
+								state.event = state.value;
+								state.value = 0;
+							}
+
+							if(block.bridge != null && block.port != null)
+							{
+								var theRequest = {
+									url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+									timeout : 10000
+								};
+
+								for(const x in state)
 								{
-									success = true;
+									theRequest.url += '&' + x + '=' + state[x];
 								}
-							});
+
+								this.fetchRequest(theRequest, automation.name, block).then((data) => {
+
+									if(!firstSuccess)
+									{
+										firstSuccess = true;
+
+										this._automationLock(automation, block);
+									}
+
+									resolve(data != null);
+								});
+							}
+							else
+							{
+								this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
+							
+								if(!firstSuccess)
+								{
+									firstSuccess = true;
+
+									this._automationLock(automation, block);
+								}
+
+								resolve(true);
+							}
 						}
 						else
 						{
-							this.EventManager.setOutputStream('changeHandler', { receiver : { id : block.id, letters : block.letters } }, state);
-						
-							success = true;
+							this.logger.log('error', block.id, block.letters, '[' + block.name + '] %update_error%! ( ' + block.id + ' )');
+
+							resolve(false);
 						}
-					}
-					else
-					{
-						this.logger.log('error', block.id, block.letters, '[' + block.name + '] %update_error%! ( ' + block.id + ' )');
-					}
+					}));
 				}
 			}
 		}
 
-		if(success)
-		{
-			this._automationLock(automation);
+		Promise.all(promiseArray).then((success) => {
 
-			this._automationSuccess(automation, trigger);
-		}
+			if(success.includes(true))
+			{
+				this._automationLock(automation);
+
+				this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
+
+				this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+			}
+		});
 	}
 
 	fetchRequest(theRequest, name, element)
@@ -461,64 +488,62 @@ module.exports = class Automation
 		});
 	}
 
-	_automationLock(automation)
+	_automationLock(automation, block)
 	{
 		var changed = false;
 
-		if(automation.options != null && automation.options.timeLock != null)
+		if(block != null)
 		{
-			this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
-
-			changed = true;
-		}
-
-		for(const i in automation.trigger.groups)
-		{
-			for(const j in automation.trigger.groups[i].blocks)
+			if(block.options == null || block.options.stateLock != false)
 			{
-				if(automation.trigger.groups[i].blocks[j].options != null && automation.trigger.groups[i].blocks[j].options.stateLock == true)
+				if(this.stateLock[automation.id] == null)
 				{
-					if(this.stateLock[automation.id] == null)
-					{
-						this.stateLock[automation.id] = {};
-					}
+					this.stateLock[automation.id] = {};
+				}
 
-					if(this.stateLock[automation.id].trigger == null)
-					{
-						this.stateLock[automation.id].trigger = {};
-					}
+				if(this.stateLock[automation.id].result != true)
+				{
+					this.stateLock[automation.id].result = true;
 
-					this.stateLock[automation.id].trigger[i + '' + j] = true;
-
-					this._updateSockets(true, automation.id, i + '' + j);
+					this._updateSockets(true, automation.id);
 
 					changed = true;
 				}
 			}
 		}
-
-		var hasLock = false;
-
-		for(const block of automation.result)
+		else
 		{
-			if(block.options == null || block.options.stateLock != false)
+			if(automation.options != null && automation.options.timeLock != null)
 			{
-				hasLock = true;
-			}
-		}
+				this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
 
-		if(hasLock)
-		{
-			if(this.stateLock[automation.id] == null)
-			{
-				this.stateLock[automation.id] = {};
+				changed = true;
 			}
 
-			this.stateLock[automation.id].result = true;
+			for(const i in automation.trigger.groups)
+			{
+				for(const j in automation.trigger.groups[i].blocks)
+				{
+					if(automation.trigger.groups[i].blocks[j].options != null && automation.trigger.groups[i].blocks[j].options.stateLock == true)
+					{
+						if(this.stateLock[automation.id] == null)
+						{
+							this.stateLock[automation.id] = {};
+						}
 
-			this._updateSockets(true, automation.id);
+						if(this.stateLock[automation.id].trigger == null)
+						{
+							this.stateLock[automation.id].trigger = {};
+						}
 
-			changed = true;
+						this.stateLock[automation.id].trigger[i + '' + j] = true;
+
+						this._updateSockets(true, automation.id, i + '' + j);
+
+						changed = true;
+					}
+				}
+			}
 		}
 
 		if(changed)
@@ -527,13 +552,6 @@ module.exports = class Automation
 		}
 	}
 
-	_automationSuccess(automation, trigger)
-	{
-		this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
-
-		this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
-	}
-	
 	async _getState(automation, block)
 	{
 		var state = null;
