@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"axios": "^0.21.1",
-		"syntex-filesystem": "1.0.3-b1",
+		"syntex-filesystem": "1.0.3-b3",
 		"syntex-logger": "1.0.9-b1"
 	},
 	"keywords": [
