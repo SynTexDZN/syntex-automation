@@ -204,13 +204,20 @@ module.exports = class Automation
 
 				Promise.all(promiseArray).then((result) => {
 
-					if(logic == 'AND' && AND(result))
+					if(!result.includes(null))
 					{
-						resolve(true);
-					}
-					else if(logic == 'OR' && OR(result))
-					{
-						resolve(true);
+						if(logic == 'AND' && AND(result))
+						{
+							resolve(true);
+						}
+						else if(logic == 'OR' && OR(result))
+						{
+							resolve(true);
+						}
+						else
+						{
+							resolve(false);
+						}
 					}
 					else
 					{
