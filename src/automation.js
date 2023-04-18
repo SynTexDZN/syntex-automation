@@ -404,6 +404,11 @@ module.exports = class Automation
 				this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
 				this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+
+				if(this.platform.bridgeConection != null)
+				{
+					this.platform.bridgeConection.send('/serverside/push', { data : { body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' } });
+				}
 			}
 		});
 	}
