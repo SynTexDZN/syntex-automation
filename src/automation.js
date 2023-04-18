@@ -405,9 +405,9 @@ module.exports = class Automation
 
 				this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 
-				if(this.platform.bridgeConection != null)
+				if(this.platform.bridgeConnection != null)
 				{
-					this.platform.bridgeConection.send('/serverside/push', { data : { body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' } });
+					this.platform.bridgeConnection.send('/serverside/push', { notification : { type : 'automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
 				}
 			}
 		});
