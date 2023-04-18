@@ -407,7 +407,7 @@ module.exports = class Automation
 
 				if(this.platform.bridgeConnection != null)
 				{
-					this.platform.bridgeConnection.send('/serverside/push', { notification : { type : 'automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
+					this.platform.bridgeConnection.send('/serverside/push', { notification : { type : 'push-automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
 				}
 			}
 		});
