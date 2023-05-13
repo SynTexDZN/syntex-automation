@@ -1,5 +1,3 @@
-const axios = require('axios');
-
 module.exports = class Automation
 {
 	constructor(platform, manager)
@@ -18,6 +16,7 @@ module.exports = class Automation
 
 		this.ContextManager = platform.ContextManager;
 		this.EventManager = platform.EventManager;
+		this.RequestManager = platform.RequestManager;
 		this.TypeManager = platform.TypeManager;
 
 		this.manager = manager;
@@ -415,14 +414,12 @@ module.exports = class Automation
 
 	fetchRequest(theRequest, name, element)
 	{
-		return new Promise((resolve) => {
-
-			axios.get(theRequest.url, theRequest).then((response) => resolve(response.data)).catch((err) => {
-
-				resolve(null);
-
+		return this.RequestManager.fetch(theRequest.url, theRequest).then((data, err) => {
+			
+			if(data == null)
+			{
 				this.logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err.stack);
-			});
+			}
 		});
 	}
 
