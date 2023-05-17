@@ -416,14 +416,14 @@ module.exports = class Automation
 	{
 		return new Promise((resolve) => {
 
-			this.RequestManager.fetch(theRequest.url, theRequest).then((data, err) => {
+			this.RequestManager.fetch(theRequest.url, theRequest).then((response) => {
 			
-				if(data == null)
+				if(response.data == null)
 				{
-					this.logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (err.response != null ? err.response.status : -1) + '] %request_result[2]%: [' + (err.response != null ? err.response.data : '') + '] ', err.stack);
+					this.logger.log('error', element.id, element.letters, '[' + name + '] %request_result[0]% [' + theRequest.url + '] %request_result[1]% [' + (response.status || -1) + '] %request_result[2]%: [' + (response.data || '') + ']', response.error || '');
 				}
 
-				resolve(data);
+				resolve(response.data);
 			});
 		});
 	}
