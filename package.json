@@ -9,7 +9,7 @@
 		"node": ">=9.11.2"
 	},
 	"dependencies": {
-		"syntex-filesystem": "1.0.3-b8",
+		"syntex-filesystem": "1.0.3-b9",
 		"syntex-logger": "1.0.9-b2"
 	},
 	"keywords": [
