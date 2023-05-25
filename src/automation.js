@@ -188,109 +188,118 @@ module.exports = class Automation
 		});
 	}
 
-	async checkTrigger(automation, service, state)
+	checkTrigger(automation, service, state)
 	{
-		const TRIGGER = (blocks, logic) => {
+		return new Promise((resolve) => {
 
-			return new Promise((resolve) => {
+			const TRIGGER = (group) => {
 
-				var promiseArray = [];
+				return new Promise((resolve) => {
 
-				for(const block of blocks)
-				{
-					promiseArray.push(new Promise((callback) => (block.id != service.id || block.letters != service.letters ? this._getState(automation, block).then((state) => callback({ block : block, state : state || {} })) : callback({ block : block, state }))));
-				}
+					var promiseArray = [];
 
-				Promise.all(promiseArray).then((result) => {
-
-					if(!result.includes(null))
+					for(const block of group.blocks)
 					{
-						if(logic == 'AND' && AND(result))
+						promiseArray.push(new Promise((callback) => (block.id != service.id || block.letters != service.letters ? this._getState(automation, block).then((state) => callback({ block : block, state : state || {} })) : callback({ block : block, state }))));
+					}
+
+					Promise.all(promiseArray).then((result) => {
+
+						if(!result.includes(null))
 						{
-							resolve(true);
-						}
-						else if(logic == 'OR' && OR(result))
-						{
-							resolve(true);
+							if(group.logic == 'AND' && AND(result))
+							{
+								resolve(true);
+							}
+							else if(group.logic == 'OR' && OR(result))
+							{
+								resolve(true);
+							}
+							else
+							{
+								resolve(false);
+							}
 						}
 						else
 						{
 							resolve(false);
 						}
-					}
-					else
-					{
-						resolve(false);
-					}
+					});
 				});
+			};
+
+			const AND = (blocks) => {
+
+				var success = true;
+
+				for(const block of blocks)
+				{
+					var output = this._getOutput(block.block, block.state);
+
+					if(!output)
+					{
+						success = false;
+					}
+				}
+
+				return success;
+			};
+
+			const OR = (blocks) => {
+
+				var success = false;
+
+				for(const block of blocks)
+				{
+					var output = this._getOutput(block.block, block.state);
+
+					if(output)
+					{
+						success = true;
+					}
+				}
+
+				return success;
+			};
+
+			var promiseArray = [];
+
+			if(automation.trigger != null && automation.trigger.groups != null)
+			{
+				for(const group of automation.trigger.groups)
+				{
+					if(group.blocks != null && group.logic != null)
+					{
+						promiseArray.push(TRIGGER(group));
+					}
+				}
+			}
+
+			Promise.all(promiseArray).then((triggers) => {
+
+				if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
+				{
+					if(automation.options == null
+					|| automation.options.timeLock == null
+					|| this.timeLock[automation.id] == null
+					|| new Date().getTime() >= this.timeLock[automation.id])
+					{
+						this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
+
+						this.executeResult(automation, service);
+					}
+				}
+				else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
+				{
+					this.stateLock[automation.id].result = false;
+
+					this._updateSockets(false, automation.id);
+
+					this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id);
+				}
+
+				resolve();
 			});
-		};
-
-		const AND = (blocks) => {
-
-			var success = true;
-
-			for(const block of blocks)
-			{
-				if(!this._getOutput(block.block, block.state))
-				{
-					success = false;
-				}
-			}
-
-			return success;
-		};
-
-		const OR = (blocks) => {
-
-			var success = false;
-
-			for(const block of blocks)
-			{
-				if(this._getOutput(block.block, block.state))
-				{
-					success = true;
-				}
-			}
-
-			return success;
-		};
-
-		var promiseArray = [];
-
-		if(automation.trigger != null && automation.trigger.groups != null)
-		{
-			for(const group of automation.trigger.groups)
-			{
-				if(group.blocks != null && group.logic != null)
-				{
-					promiseArray.push(TRIGGER(group.blocks, group.logic, service.id, service.letters));
-				}
-			}
-		}
-
-		Promise.all(promiseArray).then((triggers) => {
-
-			if(automation.trigger.logic == 'AND' ? !triggers.includes(false) : automation.trigger.logic == 'OR' ? triggers.includes(true) : false)
-			{
-				if(automation.options == null
-				|| automation.options.timeLock == null
-				|| this.timeLock[automation.id] == null
-				|| new Date().getTime() >= this.timeLock[automation.id])
-				{
-					this.logger.debug('Automation [' + automation.name + '] %trigger_activated%');
-
-					this.executeResult(automation, service);
-				}
-			}
-			else if(this.stateLock[automation.id] != null && this.stateLock[automation.id].result == true)
-			{
-				this.stateLock[automation.id].result = false;
-
-				this._updateSockets(false, automation.id);
-
-				this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id);
-			}
 		});
 	}
 
@@ -323,7 +332,7 @@ module.exports = class Automation
 							{
 								firstSuccess = true;
 
-								this._automationLock(automation, block);
+								this._automationLock(automation, { result : block });
 							}
 
 							resolve(data != null);
@@ -363,7 +372,7 @@ module.exports = class Automation
 									{
 										firstSuccess = true;
 
-										this._automationLock(automation, block);
+										this._automationLock(automation, { result : block });
 									}
 
 									resolve(data != null);
@@ -377,7 +386,7 @@ module.exports = class Automation
 								{
 									firstSuccess = true;
 
-									this._automationLock(automation, block);
+									this._automationLock(automation, { result : block });
 								}
 
 								resolve(true);
@@ -398,7 +407,7 @@ module.exports = class Automation
 
 			if(success.includes(true))
 			{
-				this._automationLock(automation);
+				this._automationLock(automation, { trigger });
 
 				this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
@@ -428,13 +437,13 @@ module.exports = class Automation
 		});
 	}
 
-	_automationLock(automation, block)
+	_automationLock(automation, entry = {})
 	{
 		var changed = false;
 
-		if(block != null)
+		if(entry.result != null)
 		{
-			if(block.options == null || block.options.stateLock != false)
+			if(entry.result.options == null || entry.result.options.stateLock != false)
 			{
 				if(this.stateLock[automation.id] == null)
 				{
@@ -451,7 +460,8 @@ module.exports = class Automation
 				}
 			}
 		}
-		else
+		
+		if(entry.trigger != null)
 		{
 			if(automation.options != null && automation.options.timeLock != null)
 			{
