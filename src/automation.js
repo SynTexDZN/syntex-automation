@@ -262,16 +262,13 @@ module.exports = class Automation
 				return success;
 			};
 
-			var promiseArray = [];
+			var groups = this._getGroups(automation.id), promiseArray = [];
 
-			if(automation.trigger != null && automation.trigger.groups != null)
+			for(const group of groups)
 			{
-				for(const group of automation.trigger.groups)
+				if(group.blocks != null && group.logic != null)
 				{
-					if(group.blocks != null && group.logic != null)
-					{
-						promiseArray.push(TRIGGER(group));
-					}
+					promiseArray.push(TRIGGER(group));
 				}
 			}
 
@@ -463,6 +460,8 @@ module.exports = class Automation
 		
 		if(entry.trigger != null)
 		{
+			var groups = this._getGroups(automation.id);
+
 			if(automation.options != null && automation.options.timeLock != null)
 			{
 				this.timeLock[automation.id] = new Date().getTime() + automation.options.timeLock;
@@ -470,11 +469,11 @@ module.exports = class Automation
 				changed = true;
 			}
 
-			for(const i in automation.trigger.groups)
+			for(const i in groups)
 			{
-				for(const j in automation.trigger.groups[i].blocks)
+				for(const j in groups[i].blocks)
 				{
-					if(automation.trigger.groups[i].blocks[j].options != null && automation.trigger.groups[i].blocks[j].options.stateLock == true)
+					if(groups[i].blocks[j].options != null && groups[i].blocks[j].options.stateLock == true)
 					{
 						if(this.stateLock[automation.id] == null)
 						{
