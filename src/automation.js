@@ -125,14 +125,14 @@ module.exports = class Automation
 						this.stateLock[message.id] = {};
 					}
 					
-					if(message.blockID != null)
+					if(message.groupID != null)
 					{
 						if(this.stateLock[message.id].trigger == null)
 						{
 							this.stateLock[message.id].trigger = {};
 						}
 						
-						this.stateLock[message.id].trigger[message.blockID] = message.lock;
+						this.stateLock[message.id].trigger[message.groupID] = message.lock;
 					}
 					else
 					{
@@ -164,7 +164,7 @@ module.exports = class Automation
 
 				for(const automation of this.automation)
 				{
-					if(automation.active && this._includesBlock(automation, service.id, service.letters))
+					if(automation.active && this._includesBlock(this._getBlocks(automation.id), service))
 					{
 						if(this._checkLock(automation, service, state))
 						{
@@ -639,6 +639,24 @@ module.exports = class Automation
 		return blocks;
 	}
 
+	_getGroups(id)
+	{
+		var groups = [];
+
+		for(const automation of this.automation)
+		{
+			if((id == null || automation.id == id) && automation.trigger != null && automation.trigger.groups != null)
+			{
+				for(const groupID in automation.trigger.groups)
+				{
+					groups.push({ groupID, ...automation.trigger.groups[groupID] });
+				}
+			}
+		}
+
+		return groups;
+	}
+
 	_isLocked(automation)
 	{
 		var blocks = this._getBlocks(automation.id);
@@ -660,28 +678,26 @@ module.exports = class Automation
 		return false;
 	}
 
-	_updateSockets(lock, id, blockID)
+	_updateSockets(lock, id, groupID)
 	{
 		if(this.EventManager != null)
 		{
 			var message = { id, lock };
 
-			if(blockID != null)
+			if(groupID != null)
 			{
-				message.blockID = blockID;
+				message.groupID = groupID;
 			}
 
 			this.EventManager.setOutputStream('updateLock', { sender : this }, message);
 		}
 	}
 
-	_includesBlock(automation, id, letters)
+	_includesBlock(blocks, service)
 	{
-		var blocks = this._getBlocks(automation.id);
-
 		for(const block of blocks)
 		{
-			if(block.id == id && block.letters == letters)
+			if(block.id == service.id && block.letters == service.letters)
 			{
 				return true;
 			}
