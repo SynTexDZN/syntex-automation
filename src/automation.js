@@ -125,14 +125,14 @@ module.exports = class Automation
 						this.stateLock[message.id] = {};
 					}
 					
-					if(message.groupID != null)
+					if(message.blockID != null)
 					{
 						if(this.stateLock[message.id].trigger == null)
 						{
 							this.stateLock[message.id].trigger = {};
 						}
 						
-						this.stateLock[message.id].trigger[message.groupID] = message.lock;
+						this.stateLock[message.id].trigger[message.blockID] = message.lock;
 					}
 					else
 					{
@@ -690,15 +690,15 @@ module.exports = class Automation
 		return false;
 	}
 
-	_updateSockets(lock, id, groupID)
+	_updateSockets(lock, id, blockID)
 	{
 		if(this.EventManager != null)
 		{
 			var message = { id, lock };
 
-			if(groupID != null)
+			if(blockID != null)
 			{
-				message.groupID = groupID;
+				message.blockID = blockID;
 			}
 
 			this.EventManager.setOutputStream('updateLock', { sender : this }, message);
