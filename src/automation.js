@@ -756,8 +756,6 @@ module.exports = class Automation
 					{
 						this.stateLock[automation.id].trigger[block.blockID] = false;
 
-						this._updateSockets(false, automation.id, block.blockID);
-
 						if(block.operation == '<')
 						{
 							this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + block.blockID);
@@ -770,6 +768,8 @@ module.exports = class Automation
 						{
 							this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + block.blockID);
 						}
+
+						this._updateSockets(false, automation.id, block.blockID);
 
 						changed = true;
 					}
