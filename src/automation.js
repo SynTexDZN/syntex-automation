@@ -404,11 +404,11 @@ module.exports = class Automation
 
 			if(success.includes(true))
 			{
+				this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
+
 				this._automationLock(automation, { trigger });
 
 				this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
-
-				this.logger.log('success', trigger.id, trigger.letters, '[' + trigger.name + '] %automation_executed[0]% [' + automation.name + '] %automation_executed[1]%!');
 
 				if(this.platform.bridgeConnection != null)
 				{
@@ -658,7 +658,10 @@ module.exports = class Automation
 			{
 				for(const groupID in automation.trigger.groups)
 				{
-					groups.push({ groupID, ...automation.trigger.groups[groupID] });
+					if(automation.trigger.groups[groupID].blocks != null && automation.trigger.groups[groupID].logic != null)
+					{
+						groups.push({ groupID, ...automation.trigger.groups[groupID] });
+					}
 				}
 			}
 		}
