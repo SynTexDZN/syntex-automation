@@ -656,11 +656,18 @@ module.exports = class Automation
 		{
 			if((id == null || automation.id == id) && automation.trigger != null && automation.trigger.groups != null)
 			{
-				for(const groupID in automation.trigger.groups)
+				for(const i in automation.trigger.groups)
 				{
-					if(automation.trigger.groups[groupID].blocks != null && automation.trigger.groups[groupID].logic != null)
+					if(automation.trigger.groups[i].blocks != null && automation.trigger.groups[i].logic != null)
 					{
-						groups.push({ groupID, ...automation.trigger.groups[groupID] });
+						var blocks = [];
+
+						for(const j in automation.trigger.groups[i].blocks)
+						{
+							blocks.push({ ...automation.trigger.groups[i].blocks[j], blockID : i + '' + j });
+						}
+
+						groups.push({ ...automation.trigger.groups[i], blocks, groupID : i });
 					}
 				}
 			}
