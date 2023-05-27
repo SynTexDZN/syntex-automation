@@ -171,7 +171,7 @@ module.exports = class Automation
 							changed = true;
 						}
 
-						if(!this._isLocked(automation))
+						if(!this._isLocked(automation, service))
 						{
 							this.checkTrigger(automation, service, state);
 						}
@@ -266,7 +266,7 @@ module.exports = class Automation
 
 			for(const group of groups)
 			{
-				if(group.blocks != null && group.logic != null)
+				if(automation.trigger.logic == 'AND' || this._includesBlock(group.blocks, service))
 				{
 					promiseArray.push(TRIGGER(group));
 				}
@@ -471,25 +471,31 @@ module.exports = class Automation
 
 			for(const i in groups)
 			{
-				for(const j in groups[i].blocks)
+				if(automation.trigger.logic == 'AND' || this._includesBlock(groups[i].blocks, entry.trigger))
 				{
-					if(groups[i].blocks[j].options != null && groups[i].blocks[j].options.stateLock == true)
+					for(const j in groups[i].blocks)
 					{
-						if(this.stateLock[automation.id] == null)
+						if(groups[i].logic == 'AND' || ((groups[i].blocks[j].id == entry.trigger.id && groups[i].blocks[j].letters == entry.trigger.letters) || entry.trigger.days != null || entry.trigger.time != null))
 						{
-							this.stateLock[automation.id] = {};
+							if(groups[i].blocks[j].options != null && groups[i].blocks[j].options.stateLock == true)
+							{
+								if(this.stateLock[automation.id] == null)
+								{
+									this.stateLock[automation.id] = {};
+								}
+
+								if(this.stateLock[automation.id].trigger == null)
+								{
+									this.stateLock[automation.id].trigger = {};
+								}
+
+								this.stateLock[automation.id].trigger[i + '' + j] = true;
+
+								this._updateSockets(true, automation.id, i + '' + j);
+
+								changed = true;
+							}
 						}
-
-						if(this.stateLock[automation.id].trigger == null)
-						{
-							this.stateLock[automation.id].trigger = {};
-						}
-
-						this.stateLock[automation.id].trigger[i + '' + j] = true;
-
-						this._updateSockets(true, automation.id, i + '' + j);
-
-						changed = true;
 					}
 				}
 			}
@@ -676,21 +682,61 @@ module.exports = class Automation
 		return groups;
 	}
 
-	_isLocked(automation)
+	_isLocked(automation, service = {})
 	{
-		var blocks = this._getBlocks(automation.id);
+		var groups = this._getGroups(automation.id), groupCounter = { lock : 0, locked : 0 };
 
-		for(const block of blocks)
+		for(const group of groups)
 		{
-			if(block.options != null
-			&& block.options.stateLock == true)
+			var blockCounter = { lock : 0, locked : 0 }, included = false;
+
+			for(const block of group.blocks)
 			{
-				if(this.stateLock[automation.id] != null
-				&& this.stateLock[automation.id].trigger != null
-				&& this.stateLock[automation.id].trigger[block.blockID] == true)
+				if(block.options != null
+				&& block.options.stateLock == true)
 				{
-					return true;
+					if(this.stateLock[automation.id] != null
+					&& this.stateLock[automation.id].trigger != null
+					&& this.stateLock[automation.id].trigger[block.blockID] == true)
+					{
+						blockCounter.locked++;
+					}
+
+					blockCounter.lock++;
 				}
+
+				if((block.id == service.id && block.letters == service.letters) || block.days != null || block.time != null)
+				{
+					included = true;
+				}
+			}
+
+			if(blockCounter.lock > 0 && (automation.trigger.logic == 'AND' || included))
+			{
+				if(group.logic == 'AND' && blockCounter.locked > 0)
+				{
+					groupCounter.locked++;
+				}
+
+				if(group.logic == 'OR' && blockCounter.locked == blockCounter.lock)
+				{
+					groupCounter.locked++;
+				}
+
+				groupCounter.lock++;
+			}
+		}
+
+		if(groupCounter.lock > 0)
+		{
+			if(automation.trigger.logic == 'AND' && groupCounter.locked > 0)
+			{
+				return true;
+			}
+
+			if(automation.trigger.logic == 'OR' && groupCounter.locked == groupCounter.lock)
+			{
+				return true;
 			}
 		}
 
