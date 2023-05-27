@@ -410,9 +410,9 @@ module.exports = class Automation
 
 				this.ContextManager.updateAutomation(trigger.id, trigger.letters, automation);
 
-				if(this.platform.bridgeConnection != null)
+				if(this.EventManager != null)
 				{
-					this.platform.bridgeConnection.send('/serverside/push', { notification : { type : 'push-automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
+					this.EventManager.setOutputStream('sendNotification', {}, { notification : { type : 'push-automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
 				}
 			}
 		});
