@@ -412,7 +412,7 @@ module.exports = class Automation
 
 				if(this.EventManager != null)
 				{
-					this.EventManager.setOutputStream('automationSuccess', { sender : this }, { automation, trigger });
+					this.EventManager.setOutputStream('automationSuccess', { sender : this }, { automation : { id : automation.id, name : automation.name }, trigger : { name : trigger.name }});
 				}
 			}
 		});
