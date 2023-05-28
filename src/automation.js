@@ -412,7 +412,7 @@ module.exports = class Automation
 
 				if(this.EventManager != null)
 				{
-					this.EventManager.setOutputStream('sendNotification', {}, { notification : { type : 'push-automation-' + automation.id, body : '[' + trigger.name + '] hat die Automation [' + automation.name + '] ausgeführt!' }});
+					this.EventManager.setOutputStream('automationSuccess', { sender : this }, { automation, trigger });
 				}
 			}
 		});
