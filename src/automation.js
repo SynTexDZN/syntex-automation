@@ -602,9 +602,9 @@ module.exports = class Automation
 					success = false;
 				}
 
-				if((block.operation == '>' && block.state[x] <= state[x])
-				|| (block.operation == '<' && block.state[x] >= state[x])
-				|| (block.operation == '=' && block.state[x] != state[x]))
+				if((state[x] <= block.state[x] && block.operation == '>')
+				|| (state[x] >= block.state[x] && block.operation == '<')
+				|| (state[x] != block.state[x] && block.operation == '='))
 				{
 					success = false;
 				}
