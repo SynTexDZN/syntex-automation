@@ -33,28 +33,28 @@ module.exports = class Automation
 
 						this.timeInterval = setInterval(() => {
 			
-							var changed = false;
+							var promiseArray = [];
 			
 							for(const automation of this.automation)
 							{
 								if(automation.active && this._includesTime(automation))
 								{
-									if(this._checkLock(automation))
-									{
-										changed = true;
-									}
+									promiseArray.push(this._checkLock(automation));
 									
 									if(!this._isLocked(automation))
 									{
-										this.checkTrigger(automation, { name : ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2) }, {});
+										this.checkTrigger(automation, { name : ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2) });
 									}
 								}
 							}
 			
-							if(changed)
-							{
-								this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-							}
+							Promise.all(promiseArray).then((result) => {
+
+								if(result.includes(true))
+								{
+									this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+								}
+							});
 
 						}, 60000);
 
@@ -160,16 +160,13 @@ module.exports = class Automation
 
 			if(this.ready)
 			{
-				var changed = false;
+				var promiseArray = [];
 
 				for(const automation of this.automation)
 				{
 					if(automation.active && this._includesBlock(this._getBlocks(automation.id), service))
 					{
-						if(this._checkLock(automation, service, state))
-						{
-							changed = true;
-						}
+						promiseArray.push(this._checkLock(automation, service, state));
 
 						if(!this._isLocked(automation, service))
 						{
@@ -178,17 +175,20 @@ module.exports = class Automation
 					}
 				}
 
-				if(changed)
-				{
-					this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-				}
+				Promise.all(promiseArray).then((result) => {
+
+					if(result.includes(true))
+					{
+						this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+					}
+				});
 			}
 			
 			resolve();
 		});
 	}
 
-	checkTrigger(automation, service, state)
+	checkTrigger(automation, service, state = {})
 	{
 		return new Promise((resolve) => {
 
@@ -200,7 +200,7 @@ module.exports = class Automation
 
 					for(const block of group.blocks)
 					{
-						promiseArray.push(new Promise((callback) => (block.id != service.id || block.letters != service.letters ? this._getState(automation, block).then((state) => callback({ block : block, state : state || {} })) : callback({ block : block, state }))));
+						promiseArray.push(this._getComparison(automation, block, service, state));
 					}
 
 					Promise.all(promiseArray).then((result) => {
@@ -591,39 +591,28 @@ module.exports = class Automation
 			return true;
 		}
 
-		if(block.id != null && block.letters != null && block.state != null && block.state instanceof Object && block.operation != null)
+		if(block.id != null && block.letters != null && block.operation != null && block.state instanceof Object)
 		{
-			if(block.operation == '>')
+			var success = true;
+
+			for(const x in block.state)
 			{
-				if((state.value == null || block.state.value == null || state.value > block.state.value)
-				&& (state.hue == null || block.state.hue == null || state.hue > block.state.hue)
-				&& (state.saturation == null || block.state.saturation == null || state.saturation > block.state.saturation)
-				&& (state.brightness == null || block.state.brightness == null || state.brightness > block.state.brightness))
+				if(state[x] == null)
 				{
-					return true;
+					success = false;
+				}
+
+				if((block.operation == '>' && block.state[x] <= state[x])
+				|| (block.operation == '<' && block.state[x] >= state[x])
+				|| (block.operation == '=' && block.state[x] != state[x]))
+				{
+					success = false;
 				}
 			}
 
-			if(block.operation == '<')
+			if(success)
 			{
-				if((state.value == null || block.state.value == null || state.value < block.state.value)
-				&& (state.hue == null || block.state.hue == null || state.hue < block.state.hue)
-				&& (state.saturation == null || block.state.saturation == null || state.saturation < block.state.saturation)
-				&& (state.brightness == null || block.state.brightness == null || state.brightness < block.state.brightness))
-				{
-					return true;
-				}
-			}
-
-			if(block.operation == '=')
-			{
-				if((state.value == null || block.state.value == null || state.value == block.state.value)
-				&& (state.hue == null || block.state.hue == null || state.hue == block.state.hue)
-				&& (state.saturation == null || block.state.saturation == null || state.saturation == block.state.saturation)
-				&& (state.brightness == null || block.state.brightness == null || state.brightness == block.state.brightness))
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 
@@ -766,6 +755,11 @@ module.exports = class Automation
 			{
 				return true;
 			}
+
+			if(block.comparison != null && block.comparison.id == service.id && block.comparison.letters == service.letters)
+			{
+				return true;
+			}
 		}
 
 		return false;
@@ -788,41 +782,93 @@ module.exports = class Automation
 
 	_checkLock(automation, service = {}, state = {})
 	{
-		var blocks = this._getBlocks(automation.id), changed = false;
+		return new Promise((resolve) => {
 
-		for(const block of blocks)
-		{
-			if(this.stateLock[automation.id] != null
-			&& this.stateLock[automation.id].trigger != null
-			&& this.stateLock[automation.id].trigger[block.blockID] == true)
+			var blocks = this._getBlocks(automation.id), promiseArray = [];
+
+			for(const block of blocks)
 			{
-				if((block.id == service.id && block.letters == service.letters) || block.days != null || block.time != null)
+				if(this.stateLock[automation.id] != null
+				&& this.stateLock[automation.id].trigger != null
+				&& this.stateLock[automation.id].trigger[block.blockID] == true)
 				{
-					if(!this._getOutput(block, state))
+					if((block.id == service.id && block.letters == service.letters) || (block.comparison != null && block.comparison.id == service.id && block.comparison.letters == service.letters) || block.days != null || block.time != null)
 					{
-						this.stateLock[automation.id].trigger[block.blockID] = false;
+						promiseArray.push(new Promise((callback) => {
+							
+							this._getComparison(automation, block, service, state).then((result) => {
 
-						if(block.operation == '<')
-						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + block.blockID);
-						}
-						else if(block.operation == '>')
-						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_lower% ' + automation.id + ' ' + block.blockID);
-						}
-						else
-						{
-							this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + block.blockID);
-						}
+								if(!this._getOutput(result.block, result.state))
+								{
+									this.stateLock[automation.id].trigger[block.blockID] = false;
 
-						this._updateSockets(false, automation.id, block.blockID);
+									if(block.operation == '<')
+									{
+										this.logger.debug('Automation [' + automation.name + '] %automation_greater% ' + automation.id + ' ' + block.blockID);
+									}
+									else if(block.operation == '>')
+									{
+										this.logger.debug('Automation [' + automation.name + '] %automation_lower% ' + automation.id + ' ' + block.blockID);
+									}
+									else
+									{
+										this.logger.debug('Automation [' + automation.name + '] %automation_different% ' + automation.id + ' ' + block.blockID);
+									}
 
-						changed = true;
+									this._updateSockets(false, automation.id, block.blockID);
+
+									callback(true);
+								}
+								else
+								{
+									callback(false);
+								}
+							});
+						}));
 					}
 				}
 			}
-		}
 
-		return changed;
+			Promise.all(promiseArray).then((result) => resolve(result.includes(true)));
+		});
+	}
+
+	_getComparison(automation, block, service, state)
+	{
+		return new Promise((resolve) => {
+
+			if(block.id == service.id && block.letters == service.letters)
+			{
+				if(block.comparison != null)
+				{
+					this._getState(automation, block.comparison).then((comparison) => {
+				
+						block.state = comparison;
+
+						resolve({ block, state });
+					});
+				}
+				else
+				{
+					resolve({ block, state });
+				}
+			}
+			else
+			{
+				if(block.comparison != null)
+				{
+					this._getState(automation, block).then((comparison) => {
+				
+						block.state = state;
+
+						resolve({ block, state : comparison });
+					});
+				}
+				else
+				{
+					this._getState(automation, block).then((state) => resolve({ block, state }));
+				}
+			}
+		});
 	}
 }
