@@ -835,6 +835,32 @@ module.exports = class Automation
 
 	_getComparison(automation, block, service, state)
 	{
+		const checkCharacteristics = (result) => {
+
+			if(result.state instanceof Object && result.block instanceof Object && result.block.characteristics instanceof Object)
+			{
+				var characteristics = Object.keys(result.block.characteristics);
+
+				for(const x in result.block.state)
+				{
+					if(!characteristics.includes(x))
+					{
+						delete result.block.state[x];
+					}
+				}
+
+				for(const x in result.state)
+				{
+					if(!characteristics.includes(x))
+					{
+						delete result.state[x];
+					}
+				}
+			}
+
+			return result;
+		};
+
 		return new Promise((resolve) => {
 
 			if(block.id == service.id && block.letters == service.letters)
@@ -845,12 +871,12 @@ module.exports = class Automation
 				
 						block.state = comparison;
 
-						resolve({ block, state });
+						resolve(checkCharacteristics({ block, state }));
 					});
 				}
 				else
 				{
-					resolve({ block, state });
+					resolve(checkCharacteristics({ block, state }));
 				}
 			}
 			else
@@ -859,14 +885,28 @@ module.exports = class Automation
 				{
 					this._getState(automation, block).then((comparison) => {
 				
-						block.state = state;
+						if(block.characteristics != null)
+						{
+							block.state = {};
 
-						resolve({ block, state : comparison });
+							for(const x in block.characteristics)
+							{
+								block.state[x] = state[x];
+							}
+
+							resolve(checkCharacteristics({ block, state : comparison }));
+						}
+						else
+						{
+							block.state = state;
+
+							resolve(checkCharacteristics({ block, state : comparison }));
+						}
 					});
 				}
 				else
 				{
-					this._getState(automation, block).then((state) => resolve({ block, state }));
+					this._getState(automation, block).then((state) => resolve(checkCharacteristics({ block, state })));
 				}
 			}
 		});
