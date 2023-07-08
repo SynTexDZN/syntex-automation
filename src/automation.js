@@ -354,7 +354,7 @@ module.exports = class Automation
 							if(block.bridge != null && block.port != null)
 							{
 								var theRequest = {
-									url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+									url : 'http://' + block.bridge + ':' + block.port + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters.slice(1),
 									timeout : 10000
 								};
 
@@ -516,7 +516,7 @@ module.exports = class Automation
 			if((block.bridge != null && block.port != null) || (block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null))
 			{
 				var theRequest = {
-					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + (block.port || this.manager.RouteManager.getPort(block.plugin)) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters[1],
+					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + (block.port || this.manager.RouteManager.getPort(block.plugin)) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.slice(1),
 					timeout : 10000
 				};
 
