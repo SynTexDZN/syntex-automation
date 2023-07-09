@@ -863,6 +863,51 @@ module.exports = class Automation
 
 		return new Promise((resolve) => {
 
+			if(block.comparison != null)
+			{
+				if(block.id == service.id && block.letters == service.letters)
+				{
+					this._getState(automation, block.comparison).then((comparison) => {
+				
+						block.state = comparison;
+
+						resolve(checkCharacteristics({ block, state }));
+					});
+				}
+				else if(block.comparison.id == service.id && block.comparison.letters == service.letters)
+				{
+					this._getState(automation, block).then((comparison) => {
+				
+						block.state = state;
+
+						resolve(checkCharacteristics({ block, state : comparison }));
+					});
+				}
+				else
+				{
+					this._getState(automation, block).then((state) => {
+
+						this._getState(automation, block.comparison).then((comparison) => {
+				
+							block.state = comparison;
+	
+							resolve(checkCharacteristics({ block, state }));
+						});
+					});
+				}
+			}
+			else
+			{
+				if(block.id == service.id && block.letters == service.letters)
+				{
+					resolve(checkCharacteristics({ block, state }));
+				}
+				else
+				{
+					this._getState(automation, block).then((state) => resolve(checkCharacteristics({ block, state })));
+				}
+			}
+
 			if(block.id == service.id && block.letters == service.letters)
 			{
 				if(block.comparison != null)
@@ -885,23 +930,9 @@ module.exports = class Automation
 				{
 					this._getState(automation, block).then((comparison) => {
 				
-						if(block.characteristics != null)
-						{
-							block.state = {};
+						block.state = state;
 
-							for(const x in block.characteristics)
-							{
-								block.state[x] = state[x];
-							}
-
-							resolve(checkCharacteristics({ block, state : comparison }));
-						}
-						else
-						{
-							block.state = state;
-
-							resolve(checkCharacteristics({ block, state : comparison }));
-						}
+						resolve(checkCharacteristics({ block, state : comparison }));
 					});
 				}
 				else
