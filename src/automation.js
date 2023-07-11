@@ -856,6 +856,11 @@ module.exports = class Automation
 						delete result.state[x];
 					}
 				}
+
+				for(const x in result.block.state)
+				{
+					result.block.state[x] += result.block.characteristics[x];
+				}
 			}
 
 			return result;
