@@ -907,39 +907,6 @@ module.exports = class Automation
 					this._getState(automation, block).then((state) => resolve(checkCharacteristics({ block, state })));
 				}
 			}
-
-			if(block.id == service.id && block.letters == service.letters)
-			{
-				if(block.comparison != null)
-				{
-					this._getState(automation, block.comparison).then((comparison) => {
-				
-						block.state = comparison;
-
-						resolve(checkCharacteristics({ block, state }));
-					});
-				}
-				else
-				{
-					resolve(checkCharacteristics({ block, state }));
-				}
-			}
-			else
-			{
-				if(block.comparison != null)
-				{
-					this._getState(automation, block).then((comparison) => {
-				
-						block.state = state;
-
-						resolve(checkCharacteristics({ block, state : comparison }));
-					});
-				}
-				else
-				{
-					this._getState(automation, block).then((state) => resolve(checkCharacteristics({ block, state })));
-				}
-			}
 		});
 	}
 }
