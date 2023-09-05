@@ -591,7 +591,7 @@ module.exports = class Automation
 			return true;
 		}
 
-		if(block.id != null && block.letters != null && block.operation != null && block.state instanceof Object)
+		if(block.id != null && block.letters != null && block.operation != null && block.state instanceof Object && state instanceof Object)
 		{
 			var success = true;
 
