@@ -837,29 +837,30 @@ module.exports = class Automation
 	{
 		const checkCharacteristics = (result) => {
 
-			if(result.state instanceof Object && result.block instanceof Object && result.block.characteristics instanceof Object)
+			if(result.state instanceof Object && result.block instanceof Object)
 			{
-				var characteristics = Object.keys(result.block.characteristics);
-
-				for(const x in result.block.state)
+				if(result.block.characteristic instanceof Object)
 				{
-					if(!characteristics.includes(x))
+					var characteristic = Object.keys(result.block.characteristic)[0];
+
+					result.state = {};
+
+					if(result.state[characteristic] != null)
 					{
-						delete result.block.state[x];
+						result.state.value = result.state[characteristic] + result.block.characteristic[characteristic];
 					}
 				}
 
-				for(const x in result.state)
+				if(result.block.comparison instanceof Object && result.block.comparison.characteristic instanceof Object)
 				{
-					if(!characteristics.includes(x))
-					{
-						delete result.state[x];
-					}
-				}
+					var characteristic = Object.keys(result.block.comparison.characteristic)[0];
 
-				for(const x in result.block.state)
-				{
-					result.block.state[x] += result.block.characteristics[x];
+					result.block.state = {};
+
+					if(result.block.state[characteristic] != null)
+					{
+						result.block.state.value = result.block.state[characteristic] + result.block.comparison.characteristic[characteristic];
+					}
 				}
 			}
 
