@@ -21,50 +21,53 @@ module.exports = class Automation
 
 		this.manager = manager;
 		
-		this.loadAutomation().then((automationSuccess) => {
+		if(this.files.checkFile('automation/automation.json'))
+		{
+			this.loadAutomation().then((automationSuccess) => {
 			
-			if(automationSuccess)
-			{
-				this.loadLock().then((lockSuccess) => {
-
-					if(lockSuccess)
-					{
-						this.initNetwork();
-
-						this.timeInterval = setInterval(() => {
-			
-							var promiseArray = [];
-			
-							for(const automation of this.automation)
-							{
-								if(automation.active && this._includesTime(automation))
+				if(automationSuccess)
+				{
+					this.loadLock().then((lockSuccess) => {
+	
+						if(lockSuccess)
+						{
+							this.initNetwork();
+	
+							this.timeInterval = setInterval(() => {
+				
+								var promiseArray = [];
+				
+								for(const automation of this.automation)
 								{
-									promiseArray.push(this._checkLock(automation));
-									
-									if(!this._isLocked(automation))
+									if(automation.active && this._includesTime(automation))
 									{
-										this.checkTrigger(automation, { name : ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2) });
+										promiseArray.push(this._checkLock(automation));
+										
+										if(!this._isLocked(automation))
+										{
+											this.checkTrigger(automation, { name : ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2) });
+										}
 									}
 								}
-							}
-			
-							Promise.all(promiseArray).then((result) => {
-
-								if(result.includes(true))
-								{
-									this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-								}
-							});
-
-						}, 60000);
-
-						this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
-
-						this.ready = true;
-					}
-				});
-			}
-		});
+				
+								Promise.all(promiseArray).then((result) => {
+	
+									if(result.includes(true))
+									{
+										this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
+									}
+								});
+	
+							}, 60000);
+	
+							this.logger.log('success', 'automation', 'Automation', '%automation_load_success%!');
+	
+							this.ready = true;
+						}
+					});
+				}
+			});
+		}
 	}
 
 	loadAutomation()
