@@ -846,24 +846,18 @@ module.exports = class Automation
 				{
 					var characteristic = Object.keys(result.block.characteristic)[0];
 
-					result.state = {};
-
-					if(result.state[characteristic] != null)
-					{
-						result.state.value = result.state[characteristic] + result.block.characteristic[characteristic];
-					}
+					result.state = {
+						value : result.state[characteristic] + result.block.characteristic[characteristic]
+					};
 				}
 
 				if(result.block.comparison instanceof Object && result.block.comparison.characteristic instanceof Object)
 				{
 					var characteristic = Object.keys(result.block.comparison.characteristic)[0];
 
-					result.block.state = {};
-
-					if(result.block.state[characteristic] != null)
-					{
-						result.block.state.value = result.block.state[characteristic] + result.block.comparison.characteristic[characteristic];
-					}
+					result.block.state = {
+						value : result.block.state[characteristic] + result.block.comparison.characteristic[characteristic]
+					};
 				}
 			}
 
