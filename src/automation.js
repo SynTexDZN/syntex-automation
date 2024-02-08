@@ -76,12 +76,16 @@ module.exports = class Automation
 
 			this.files.readFile('automation/automation.json').then((data) => {
 
-				if(data != null)
+				if(data != null && Array.isArray(data) && data.length > 0)
 				{
 					this.automation = data;
-				}
 
-				resolve(data != null);
+					resolve(true);
+				}
+				else
+				{
+					resolve(false);
+				}
 
 			}).catch(() => {
 				
@@ -893,7 +897,7 @@ module.exports = class Automation
 						this._getState(automation, block.comparison).then((comparison) => {
 				
 							block.state = comparison;
-	
+
 							resolve(checkCharacteristics({ block, state }));
 						});
 					});
