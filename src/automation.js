@@ -160,33 +160,7 @@ module.exports = class Automation
 
 	runAutomation(service, state)
 	{
-		return new Promise((resolve) => {
-
-			if(this.ready)
-			{
-				var promiseArray = [];
-
-				for(const automation of this.automation)
-				{
-					if(automation.active && this._includesBlock(this._getBlocks(automation.id), service))
-					{
-						promiseArray.push(this._checkLock(automation, service, state));
-
-						this.checkTrigger(automation, service, state);
-					}
-				}
-
-				Promise.all(promiseArray).then((result) => {
-
-					if(result.includes(true))
-					{
-						this.files.writeFile('automation/automation-lock.json', { timeLock : this.timeLock, stateLock : this.stateLock });
-					}
-				});
-			}
-			
-			resolve();
-		});
+		this.EventManager.setOutputStream('runAutomation', { sender : this }, { service : { id : service.id, letters : service.letters, name : service.name }, state });
 	}
 
 	checkTrigger(automation, service, state = {})
