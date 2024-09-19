@@ -7,7 +7,7 @@ module.exports = class AutomationSystem
 		this.pluginName = platform.pluginName;
 		this.logger = platform.logger;
 
-		this.RouteManager = new RouteManager(platform.logger, platform.files, platform.api.user.storagePath());
+		this.RouteManager = new RouteManager(platform);
 		this.LogikEngine = new LogikEngine(platform, this);
 	}
 }
