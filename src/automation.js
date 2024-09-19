@@ -1,6 +1,6 @@
-module.exports = class Automation
+module.exports = class AutomationSystem
 {
-	constructor(platform, manager)
+	constructor(platform, ActivityManager)
 	{
 		this.ready = false;
 
@@ -17,9 +17,12 @@ module.exports = class Automation
 		this.ContextManager = platform.ContextManager;
 		this.EventManager = platform.EventManager;
 		this.RequestManager = platform.RequestManager;
-		this.TypeManager = platform.TypeManager;
 
-		this.manager = manager;
+		this.ActivityManager = ActivityManager;
+
+		this.RouteManager = ActivityManager.RouteManager;
+		
+		this.TypeManager = platform.TypeManager;
 		
 		if(this.files.checkFile('automation/automation.json'))
 		{
@@ -491,10 +494,10 @@ module.exports = class Automation
 
 		if(block.id != null && block.letters != null)
 		{
-			if((block.bridge != null && block.port != null) || (block.plugin != null && this.manager.pluginName != block.plugin && this.manager.RouteManager.getPort(block.plugin) != null))
+			if((block.bridge != null && block.port != null) || (block.plugin != null && this.ActivityManager.pluginName != block.plugin && this.RouteManager.getPort(block.plugin) != null))
 			{
 				var theRequest = {
-					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + (block.port || this.manager.RouteManager.getPort(block.plugin)) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters.slice(1),
+					url : 'http://' + (block.bridge || '127.0.0.1') + ':' + (block.port || this.RouteManager.getPort(block.plugin)) + '/devices?id=' + block.id + '&type=' + this.TypeManager.letterToType(block.letters[0]) + '&counter=' + block.letters.slice(1),
 					timeout : 10000
 				};
 
@@ -603,11 +606,11 @@ module.exports = class Automation
 
 		for(const automation of this.automation)
 		{
-			if((id == null || automation.id == id) && automation.trigger != null && automation.trigger.groups != null)
+			if((id == null || automation.id == id) && automation.trigger != null && Array.isArray(automation.trigger.groups))
 			{
 				for(const i in automation.trigger.groups)
 				{
-					if(automation.trigger.groups[i].blocks != null)
+					if(Array.isArray(automation.trigger.groups[i].blocks))
 					{
 						for(const j in automation.trigger.groups[i].blocks)
 						{
